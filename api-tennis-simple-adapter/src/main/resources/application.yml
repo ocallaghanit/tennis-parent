@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: api-tennis-simple-adapter
+  
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/tennis}
+      auto-index-creation: true
+
+server:
+  port: 8080
+
+# API Tennis Configuration
+tennis:
+  api:
+    base-url: ${TENNIS_API_BASE_URL:https://api.api-tennis.com}
+    key: ${TENNIS_API_KEY:your_api_key_here}
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+# Swagger / OpenAPI
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+  api-docs:
+    path: /api-docs
+
+logging:
+  level:
+    com.tennis.adapter: DEBUG
+    org.springframework.data.mongodb: INFO
+

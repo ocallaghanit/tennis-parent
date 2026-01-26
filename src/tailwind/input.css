@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body { height: 100%; }
+  body { @apply bg-[color:var(--bg,theme(colors.brand.bg))] text-[color:var(--text,theme(colors.brand.text))]; }
+  a { @apply text-[color:var(--accent,theme(colors.brand.accent))] underline underline-offset-2 hover:no-underline hover:opacity-90 transition-colors; }
+  table { @apply w-full border-collapse; }
+  th, td { @apply border-b border-slate-700/40 p-2; }
+}
+
+@layer components {
+  .btn { @apply inline-flex items-center gap-2 rounded-md bg-[color:var(--accent,theme(colors.brand.accent))] text-white px-3 py-2 border-0 cursor-pointer; }
+  .btn.secondary { @apply bg-slate-600; }
+  .card { @apply rounded-lg bg-[color:var(--muted,theme(colors.brand.muted))] text-[color:var(--text,theme(colors.brand.text))] p-4; }
+}
+
+

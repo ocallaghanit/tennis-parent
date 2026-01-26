@@ -1,0 +1,143 @@
+{
+  "info": {
+    "name": "Tennis API (Vendor) - Core Endpoints",
+    "_postman_id": "b7a6c2f3-6b6a-4c5b-9ee0-6e2a0a2e8a01",
+    "description": "Postman collection for API Tennis core endpoints: events, tournaments, fixtures, odds, live odds. Configure APIkey in variables before use.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Events - get_events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/tennis/?method=get_events&APIkey={{APIkey}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "tennis",
+            ""
+          ],
+          "query": [
+            { "key": "method", "value": "get_events" },
+            { "key": "APIkey", "value": "{{APIkey}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tournaments - get_tournaments",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/tennis/?method=get_tournaments&APIkey={{APIkey}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "tennis",
+            ""
+          ],
+          "query": [
+            { "key": "method", "value": "get_tournaments" },
+            { "key": "APIkey", "value": "{{APIkey}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Fixtures - get_fixtures (by date range)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/tennis/?method=get_fixtures&APIkey={{APIkey}}&date_start={{date_start}}&date_stop={{date_stop}}&event_type_key={{event_type_key}}&tournament_key={{tournament_key}}&tournament_season={{tournament_season}}&match_key={{match_key}}&player_key={{player_key}}&timezone={{timezone}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "tennis",
+            ""
+          ],
+          "query": [
+            { "key": "method", "value": "get_fixtures" },
+            { "key": "APIkey", "value": "{{APIkey}}" },
+            { "key": "date_start", "value": "{{date_start}}" },
+            { "key": "date_stop", "value": "{{date_stop}}" },
+            { "key": "event_type_key", "value": "{{event_type_key}}" },
+            { "key": "tournament_key", "value": "{{tournament_key}}" },
+            { "key": "tournament_season", "value": "{{tournament_season}}" },
+            { "key": "match_key", "value": "{{match_key}}" },
+            { "key": "player_key", "value": "{{player_key}}" },
+            { "key": "timezone", "value": "{{timezone}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Odds - get_odds (by match_key)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/tennis/?method=get_odds&APIkey={{APIkey}}&match_key={{match_key}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "tennis",
+            ""
+          ],
+          "query": [
+            { "key": "method", "value": "get_odds" },
+            { "key": "APIkey", "value": "{{APIkey}}" },
+            { "key": "match_key", "value": "{{match_key}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Live Odds - get_live_odds",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/tennis/?method=get_live_odds&APIkey={{APIkey}}&event_type_key={{event_type_key}}&tournament_key={{tournament_key}}&match_key={{match_key}}&player_key={{player_key}}&timezone={{timezone}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "tennis",
+            ""
+          ],
+          "query": [
+            { "key": "method", "value": "get_live_odds" },
+            { "key": "APIkey", "value": "{{APIkey}}" },
+            { "key": "event_type_key", "value": "{{event_type_key}}" },
+            { "key": "tournament_key", "value": "{{tournament_key}}" },
+            { "key": "match_key", "value": "{{match_key}}" },
+            { "key": "player_key", "value": "{{player_key}}" },
+            { "key": "timezone", "value": "{{timezone}}" }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "https://api.api-tennis.com", "type": "string" },
+    { "key": "APIkey", "value": "", "type": "string" },
+    { "key": "date_start", "value": "2024-01-01", "type": "string" },
+    { "key": "date_stop", "value": "2024-01-02", "type": "string" },
+    { "key": "event_type_key", "value": "", "type": "string" },
+    { "key": "tournament_key", "value": "", "type": "string" },
+    { "key": "tournament_season", "value": "", "type": "string" },
+    { "key": "match_key", "value": "", "type": "string" },
+    { "key": "player_key", "value": "", "type": "string" },
+    { "key": "timezone", "value": "Europe/Berlin", "type": "string" }
+  ]
+}
+
+

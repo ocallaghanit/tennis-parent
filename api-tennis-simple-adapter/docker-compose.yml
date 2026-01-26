@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: api-tennis-simple-adapter
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/tennis
+      - TENNIS_API_KEY=${TENNIS_API_KEY}
+      - TENNIS_API_BASE_URL=https://api.api-tennis.com
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - tennis-network
+
+  mongo:
+    image: mongo:7
+    container_name: tennis-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tennis-network
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: tennis-mongo-express
+    ports:
+      - "8082:8081"
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://mongo:27017/
+      - ME_CONFIG_BASICAUTH=false
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - tennis-network
+
+volumes:
+  mongo-data:
+
+networks:
+  tennis-network:
+    driver: bridge
+
