@@ -75,9 +75,11 @@ public class IngestionController {
     @Operation(summary = "Ingest a player", description = "Fetch and store a single player's profile")
     public ResponseEntity<Map<String, Object>> ingestPlayer(
             @Parameter(description = "Player key from API Tennis")
-            @PathVariable String playerKey
+            @PathVariable String playerKey,
+            @Parameter(description = "Force re-fetch even if recently updated")
+            @RequestParam(defaultValue = "false") boolean force
     ) {
-        IngestionResult result = ingestionService.ingestPlayer(playerKey);
+        IngestionResult result = ingestionService.ingestPlayer(playerKey, force);
         return buildResponse(result);
     }
 
@@ -85,9 +87,12 @@ public class IngestionController {
     @Operation(summary = "Sync players from fixtures", 
                description = "Extract unique player keys from stored fixtures and fetch missing/stale profiles. " +
                        "Rate-limited (200ms between calls) to avoid API throttling. " +
-                       "Skips players fetched within the last 14 days.")
-    public ResponseEntity<Map<String, Object>> syncPlayersFromFixtures() {
-        IngestionResult result = ingestionService.syncPlayersFromFixtures();
+                       "Skips players fetched within the last 14 days unless force=true.")
+    public ResponseEntity<Map<String, Object>> syncPlayersFromFixtures(
+            @Parameter(description = "Force re-fetch all players (ignores TTL)")
+            @RequestParam(defaultValue = "false") boolean force
+    ) {
+        IngestionResult result = ingestionService.syncPlayersFromFixtures(force);
         return buildResponse(result);
     }
 
@@ -118,24 +123,35 @@ public class IngestionController {
         return buildResponse(result);
     }
 
+    @DeleteMapping("/cleanup/non-singles")
+    @Operation(summary = "Cleanup non-singles data", 
+               description = "Remove all non-Men's Singles fixtures (doubles, WTA, etc.) from the database. " +
+                       "Also removes associated odds. This is a destructive operation!")
+    public ResponseEntity<Map<String, Object>> cleanupNonSingles() {
+        IngestionResult result = ingestionService.cleanupNonSinglesData();
+        return buildResponse(result);
+    }
+
     @PostMapping("/catalog")
-    @Operation(summary = "Full catalog refresh", description = "Ingest all events + ATP Singles (265) tournaments (Men's only)")
+    @Operation(summary = "Full catalog refresh", description = "Ingest all events + all tournaments (API returns full catalog regardless of filter)")
     public ResponseEntity<Map<String, Object>> ingestCatalog() {
         IngestionResult eventsResult = ingestionService.ingestEvents();
-        IngestionResult atpResult = ingestionService.ingestTournaments("265");
+        // Note: API Tennis returns ALL tournaments regardless of event_type_id filter,
+        // so we only need to call this once (no filter)
+        IngestionResult tournamentsResult = ingestionService.ingestTournaments(null);
         
-        // Check if any failed
-        boolean allSuccess = eventsResult.isSuccess() && atpResult.isSuccess();
+        boolean allSuccess = eventsResult.isSuccess() && tournamentsResult.isSuccess();
         
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", allSuccess);
         
         if (allSuccess) {
-            response.put("message", "Catalog ingested successfully (Men's ATP Singles only)");
+            response.put("message", String.format("Catalog ingested: %d events, %d tournaments", 
+                    eventsResult.getCount(), tournamentsResult.getCount()));
         } else {
             StringBuilder errors = new StringBuilder();
             if (!eventsResult.isSuccess()) errors.append("Events: ").append(eventsResult.getMessage()).append("; ");
-            if (!atpResult.isSuccess()) errors.append("ATP: ").append(atpResult.getMessage());
+            if (!tournamentsResult.isSuccess()) errors.append("Tournaments: ").append(tournamentsResult.getMessage());
             response.put("message", "Partial failure: " + errors.toString().trim());
         }
         
@@ -144,10 +160,10 @@ public class IngestionController {
                 "count", eventsResult.getCount(),
                 "message", eventsResult.getMessage()
         ));
-        response.put("atpTournaments", Map.of(
-                "success", atpResult.isSuccess(),
-                "count", atpResult.getCount(),
-                "message", atpResult.getMessage()
+        response.put("tournaments", Map.of(
+                "success", tournamentsResult.isSuccess(),
+                "count", tournamentsResult.getCount(),
+                "message", tournamentsResult.getMessage()
         ));
         
         return ResponseEntity.ok(response);

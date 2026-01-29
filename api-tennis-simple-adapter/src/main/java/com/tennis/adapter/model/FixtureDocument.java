@@ -18,6 +18,9 @@ public class FixtureDocument extends BaseDocument {
 
     @Indexed
     private String tournamentKey;
+    
+    @Indexed
+    private String eventTypeKey;
 
     @Indexed
     private LocalDate eventDate;
@@ -52,6 +55,14 @@ public class FixtureDocument extends BaseDocument {
 
     public void setTournamentKey(String tournamentKey) {
         this.tournamentKey = tournamentKey;
+    }
+
+    public String getEventTypeKey() {
+        return eventTypeKey;
+    }
+
+    public void setEventTypeKey(String eventTypeKey) {
+        this.eventTypeKey = eventTypeKey;
     }
 
     public LocalDate getEventDate() {

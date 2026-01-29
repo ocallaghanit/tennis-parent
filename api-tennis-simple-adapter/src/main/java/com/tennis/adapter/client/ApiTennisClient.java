@@ -94,13 +94,23 @@ public class ApiTennisClient {
     }
 
     /**
-     * Get odds by date range (batch)
+     * Get odds by date range (batch) - filters by ATP Singles event type
      */
     public JsonNode getOddsByDateRange(String dateStart, String dateStop) {
-        return callApi("get_odds", Map.of(
-                "date_start", dateStart,
-                "date_stop", dateStop
-        ));
+        return getOddsByDateRange(dateStart, dateStop, "265"); // Default to ATP Singles
+    }
+
+    /**
+     * Get odds by date range with optional event type filter
+     */
+    public JsonNode getOddsByDateRange(String dateStart, String dateStop, String eventTypeKey) {
+        java.util.Map<String, String> params = new java.util.HashMap<>();
+        params.put("date_start", dateStart);
+        params.put("date_stop", dateStop);
+        if (eventTypeKey != null && !eventTypeKey.isBlank()) {
+            params.put("event_type_key", eventTypeKey);
+        }
+        return callApi("get_odds", params);
     }
 
     /**
