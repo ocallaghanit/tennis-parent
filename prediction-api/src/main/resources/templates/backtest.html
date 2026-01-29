@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backtest - Tennis Prediction API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-slate-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-slate-900/80 border-b border-purple-800/50 sticky top-0 z-50 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🔮</span>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    Tennis Prediction API
+                </h1>
+            </div>
+            <nav class="flex items-center gap-6">
+                <a href="/ui/dashboard" class="text-slate-400 hover:text-slate-200 transition-colors">Dashboard</a>
+                <a href="/ui/predict" class="text-slate-400 hover:text-slate-200 transition-colors">Predict</a>
+                <a href="/ui/predictions" class="text-slate-400 hover:text-slate-200 transition-colors">Predictions</a>
+                <a href="/ui/backtest" class="text-purple-400 font-medium">Backtest</a>
+                <a href="/ui/models" class="text-slate-400 hover:text-slate-200 transition-colors">Models</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold mb-2">📊 Backtest</h2>
+            <p class="text-slate-500">Evaluate prediction model performance on historical data</p>
+        </div>
+
+        <!-- Backtest Form -->
+        <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6 mb-8">
+            <h3 class="text-xl font-semibold mb-4">Run Backtest</h3>
+            <form method="post" class="grid md:grid-cols-5 gap-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Model</label>
+                    <select name="modelId" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                        <option th:each="model : ${models}" 
+                                th:value="${model.modelId}"
+                                th:text="${model.name}"
+                                th:selected="${model.modelId == selectedModel}">Model</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Start Date</label>
+                    <input type="date" name="startDate" th:value="${startDate}" 
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">End Date</label>
+                    <input type="date" name="endDate" th:value="${endDate}"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Min Odds 
+                        <span class="text-slate-600">(optional)</span>
+                    </label>
+                    <input type="number" name="minOdds" step="0.1" min="1.0" max="10.0"
+                           th:value="${minOdds}" placeholder="e.g. 2.0"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-medium rounded-lg px-4 py-2 transition-colors">
+                        🚀 Run Backtest
+                    </button>
+                </div>
+            </form>
+            <p class="text-xs text-slate-500 mt-3">
+                💡 <strong>Min Odds Filter:</strong> Only place bets when predicted winner's odds ≥ this value. Use 2.0+ to bet only on underdogs.
+            </p>
+        </div>
+
+        <!-- Results -->
+        <div th:if="${result}" class="space-y-8">
+            <!-- Summary Stats -->
+            <div class="grid md:grid-cols-5 gap-6">
+                <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6 text-center">
+                    <div class="text-4xl font-bold text-purple-400 mono" th:text="${result.totalMatches}">0</div>
+                    <div class="text-slate-400 mt-1">Total Matches</div>
+                </div>
+                <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6 text-center">
+                    <div class="text-4xl font-bold text-green-400 mono" th:text="${result.correct}">0</div>
+                    <div class="text-slate-400 mt-1">Correct</div>
+                </div>
+                <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6 text-center">
+                    <div class="text-4xl font-bold text-red-400 mono" th:text="${result.incorrect}">0</div>
+                    <div class="text-slate-400 mt-1">Incorrect</div>
+                </div>
+                <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6 text-center">
+                    <div class="text-4xl font-bold text-cyan-400 mono" th:text="${result.accuracyPercent}">0%</div>
+                    <div class="text-slate-400 mt-1">Accuracy</div>
+                </div>
+                <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6 text-center">
+                    <div class="text-4xl font-bold text-amber-400 mono" th:text="${#numbers.formatDecimal(result.avgBrierScore, 0, 3)}">0.000</div>
+                    <div class="text-slate-400 mt-1">Avg Brier Score</div>
+                </div>
+            </div>
+
+            <!-- Betting Simulation Summary -->
+            <div th:if="${result.matchesWithOdds > 0}" class="bg-gradient-to-r from-emerald-900/30 to-purple-900/30 border border-emerald-700/50 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold flex items-center gap-2">
+                        <span>💰</span> Betting Simulation (1 token per match)
+                    </h3>
+                    <div th:if="${result.hasOddsFilter()}" class="bg-amber-500/20 border border-amber-500/50 rounded-lg px-3 py-1">
+                        <span class="text-amber-400 text-sm font-medium">
+                            🎯 Min Odds: <span th:text="${result.minOddsFormatted}">2.0</span>+
+                        </span>
+                    </div>
+                </div>
+                <div th:class="${result.hasOddsFilter()} ? 'grid md:grid-cols-5 gap-6' : 'grid md:grid-cols-4 gap-6'">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-slate-300 mono" th:text="${result.betsPlaced}">0</div>
+                        <div class="text-slate-400 text-sm mt-1">Bets Placed</div>
+                    </div>
+                    <div th:if="${result.hasOddsFilter()}" class="text-center">
+                        <div class="text-3xl font-bold text-amber-400 mono" th:text="${result.skippedDueToOddsFilter}">0</div>
+                        <div class="text-slate-400 text-sm mt-1">Filtered Out</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-slate-300 mono" th:text="${result.stakeFormatted}">0</div>
+                        <div class="text-slate-400 text-sm mt-1">Total Stake</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mono" 
+                             th:classappend="${result.totalProfit >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                             th:text="${result.profitFormatted}">+0.00</div>
+                        <div class="text-slate-400 text-sm mt-1">Total Profit</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mono" 
+                             th:classappend="${result.roi >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                             th:text="${result.roiPercent}">+0.00%</div>
+                        <div class="text-slate-400 text-sm mt-1">ROI</div>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-500 mt-4">
+                    📊 Based on bet365 odds at match time. Positive ROI means the model would have been profitable.
+                    <span th:if="${result.hasOddsFilter()}" class="text-amber-400">
+                        Only betting on picks with odds ≥ <span th:text="${result.minOddsFormatted}">2.0</span>.
+                    </span>
+                </p>
+            </div>
+
+            <!-- Confidence Analysis -->
+            <div th:if="${confidenceAnalysis}" class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-4">Accuracy by Confidence Level</h3>
+                <div class="grid md:grid-cols-7 gap-4">
+                    <div th:each="bucket : ${confidenceAnalysis}" class="bg-slate-800/50 rounded-lg p-4 text-center">
+                        <div class="text-sm text-slate-400 mb-2" th:text="${bucket.key}">0.3-0.4</div>
+                        <div class="text-2xl font-bold" 
+                             th:classappend="${bucket.value.accuracy >= 0.6} ? 'text-green-400' : (${bucket.value.accuracy >= 0.5} ? 'text-amber-400' : 'text-red-400')"
+                             th:text="${bucket.value.accuracyPercent}">50%</div>
+                        <div class="text-xs text-slate-500 mt-1" th:text="${bucket.value.correct + '/' + bucket.value.total}">0/0</div>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-500 mt-4">
+                    💡 Ideally, higher confidence predictions should have higher accuracy
+                </p>
+            </div>
+
+            <!-- Individual Results (first 100) -->
+            <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-4">Individual Predictions (showing first 100)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="text-left text-sm text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="pb-2 pr-4">Date</th>
+                                <th class="pb-2 pr-4">Match</th>
+                                <th class="pb-2 pr-4">Prediction</th>
+                                <th class="pb-2 pr-4">Actual Winner</th>
+                                <th class="pb-2 pr-4 text-center">Odds</th>
+                                <th class="pb-2 pr-4 text-center">Conf</th>
+                                <th class="pb-2 text-center">Result</th>
+                                <th class="pb-2 text-right">Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/50">
+                            <tr th:each="pred, stat : ${result.predictions}" th:if="${stat.index < 100}" 
+                                class="hover:bg-slate-800/30"
+                                th:classappend="${pred.correct} ? 'bg-emerald-950/20' : 'bg-red-950/20'">
+                                <td class="py-3 pr-4 text-sm mono text-slate-400" th:text="${pred.matchDate}">2026-01-27</td>
+                                <td class="py-3 pr-4 text-sm">
+                                    <span th:text="${pred.player1Name ?: pred.matchKey}">Player 1</span>
+                                    <span class="text-slate-600 mx-1">vs</span>
+                                    <span th:text="${pred.player2Name ?: ''}">Player 2</span>
+                                </td>
+                                <td class="py-3 pr-4">
+                                    <span class="text-sm font-medium" 
+                                          th:classappend="${pred.correct} ? 'text-emerald-400' : 'text-slate-300'"
+                                          th:text="${pred.predictedWinnerName ?: pred.predictedWinner}">Predicted</span>
+                                    <span th:if="${pred.predictedOdds != null}" class="text-xs text-amber-400 ml-1 mono">
+                                        @<span th:text="${#numbers.formatDecimal(pred.predictedOdds, 1, 2)}">1.50</span>
+                                    </span>
+                                </td>
+                                <td class="py-3 pr-4 text-sm text-slate-300" th:text="${pred.actualWinnerName ?: pred.actualWinner}">Actual</td>
+                                <td class="py-3 pr-4 text-center">
+                                    <span th:if="${pred.hasOdds()}" class="text-xs mono text-slate-500">
+                                        <span th:text="${#numbers.formatDecimal(pred.homeOdds, 1, 2)}">1.50</span>
+                                        <span class="mx-1">/</span>
+                                        <span th:text="${#numbers.formatDecimal(pred.awayOdds, 1, 2)}">2.50</span>
+                                    </span>
+                                    <span th:unless="${pred.hasOdds()}" class="text-slate-600">-</span>
+                                </td>
+                                <td class="py-3 pr-4 text-center">
+                                    <span class="text-sm mono" th:text="${#numbers.formatDecimal(pred.confidence * 100, 0, 0) + '%'}">50%</span>
+                                </td>
+                                <td class="py-3 text-center">
+                                    <span th:if="${pred.correct}" class="text-emerald-400 text-lg">✓</span>
+                                    <span th:unless="${pred.correct}" class="text-red-400 text-lg">✗</span>
+                                </td>
+                                <td class="py-3 text-right">
+                                    <span th:if="${pred.betPlaced and pred.profit != null}" 
+                                          class="mono font-semibold"
+                                          th:classappend="${pred.profit >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                                          th:text="${pred.profitFormatted}">+0.00</span>
+                                    <span th:if="${pred.hasOdds() and !pred.betPlaced}" 
+                                          class="text-xs text-amber-400/70 italic">filtered</span>
+                                    <span th:if="${!pred.hasOdds()}" class="text-slate-600">-</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Running Total by Row -->
+                <div th:if="${result.matchesWithOdds > 0}" class="mt-4 pt-4 border-t border-slate-800 flex justify-end gap-8">
+                    <div class="text-sm text-slate-400">
+                        Showing <span class="text-slate-200" th:text="${result.predictions.size() > 100 ? 100 : result.predictions.size()}">0</span>
+                        of <span class="text-slate-200" th:text="${result.predictions.size()}">0</span> predictions
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+

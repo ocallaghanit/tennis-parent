@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${player.playerName + ' - OWL Ratings'}">Player - OWL Ratings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Momentum glow effects */
+        .glow-hot { box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); }
+        .glow-cold { box-shadow: 0 0 30px rgba(59, 130, 246, 0.4); }
+        .glow-rising { box-shadow: 0 0 30px rgba(34, 197, 94, 0.4); }
+        .glow-stable { box-shadow: 0 0 20px rgba(100, 116, 139, 0.3); }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 text-slate-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-slate-900/80 border-b border-indigo-800/50 sticky top-0 z-50 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🦉</span>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                    OWL Rating System
+                </h1>
+            </div>
+            <nav class="flex items-center gap-6">
+                <a href="/ui/dashboard" class="text-slate-400 hover:text-slate-200 transition-colors">Dashboard</a>
+                <a href="/ui/owl" class="text-slate-400 hover:text-slate-200 transition-colors">Leaderboard</a>
+                <a href="/ui/owl/trends" class="text-slate-400 hover:text-slate-200 transition-colors">Trends</a>
+                <a href="/ui/owl/admin" class="text-slate-400 hover:text-slate-200 transition-colors">Admin</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Breadcrumb -->
+        <div class="mb-6">
+            <a href="/ui/owl" class="text-slate-400 hover:text-amber-400 transition-colors">← Back to Leaderboard</a>
+        </div>
+
+        <!-- Player Header with Momentum Indicator -->
+        <div class="bg-gradient-to-r from-amber-900/30 to-indigo-900/30 border border-amber-700/50 rounded-xl p-8 mb-8"
+             th:classappend="${player.momentumTrend == 'hot'} ? 'glow-hot' : (${player.momentumTrend == 'cold'} ? 'glow-cold' : (${player.momentumTrend == 'rising'} ? 'glow-rising' : ''))">
+            <div class="flex items-start justify-between">
+                <div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <span th:if="${player.owlRank <= 3}" 
+                              class="text-4xl" 
+                              th:text="${player.owlRank == 1 ? '🥇' : (player.owlRank == 2 ? '🥈' : '🥉')}"></span>
+                        <span th:unless="${player.owlRank <= 3}" 
+                              class="text-3xl font-bold text-slate-500">#<span th:text="${player.owlRank}">10</span></span>
+                        <h2 class="text-4xl font-bold" th:text="${player.playerName}">Player Name</h2>
+                        <!-- Momentum Badge -->
+                        <span class="text-3xl" th:text="${player.momentumEmoji}">➡️</span>
+                    </div>
+                    <div class="flex items-center gap-6 text-slate-400">
+                        <span th:if="${player.atpRank != null}">ATP Rank: <span class="text-slate-200 font-medium" th:text="${player.atpRank}">#10</span></span>
+                        <span>Matches: <span class="text-slate-200 font-medium" th:text="${player.matchesPlayed}">0</span></span>
+                        <span class="flex items-center gap-2">
+                            Trend: 
+                            <span class="font-medium"
+                                  th:classappend="${player.momentumTrend == 'hot'} ? 'text-red-400' : (${player.momentumTrend == 'rising'} ? 'text-green-400' : (${player.momentumTrend == 'cooling'} ? 'text-yellow-400' : (${player.momentumTrend == 'cold'} ? 'text-blue-400' : 'text-slate-400')))"
+                                  th:text="${player.momentumLabel}">Stable</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-6xl font-bold mono"
+                         th:classappend="${player.rating >= 1700} ? 'text-amber-400' : (${player.rating >= 1500} ? 'text-emerald-400' : 'text-slate-400')"
+                         th:text="${player.ratingFormatted}">1500.0</div>
+                    <div class="text-slate-400 mt-1">OWL Rating</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid with Momentum & Consistency -->
+        <div class="grid md:grid-cols-8 gap-4 mb-8">
+            <div class="bg-slate-900/50 border border-indigo-800/30 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-emerald-400 mono" th:text="${player.wins}">0</div>
+                <div class="text-slate-400 text-sm mt-1">Wins</div>
+            </div>
+            <div class="bg-slate-900/50 border border-indigo-800/30 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-red-400 mono" th:text="${player.losses}">0</div>
+                <div class="text-slate-400 text-sm mt-1">Losses</div>
+            </div>
+            <div class="bg-slate-900/50 border border-indigo-800/30 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold mono"
+                     th:classappend="${player.winRate >= 0.6} ? 'text-emerald-400' : (${player.winRate >= 0.5} ? 'text-amber-400' : 'text-red-400')"
+                     th:text="${player.winRateFormatted}">50%</div>
+                <div class="text-slate-400 text-sm mt-1">Win Rate</div>
+            </div>
+            <div class="bg-slate-900/50 border border-indigo-800/30 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold mono"
+                     th:classappend="${player.last10WinRate >= 0.7} ? 'text-emerald-400' : (${player.last10WinRate >= 0.5} ? 'text-amber-400' : 'text-red-400')"
+                     th:text="${player.last10WinRateFormatted}">50%</div>
+                <div class="text-slate-400 text-sm mt-1">Last 10</div>
+            </div>
+            <div class="bg-slate-900/50 border border-indigo-800/30 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-pink-400 mono" th:text="${#numbers.formatDecimal(player.peakRating, 0, 1)}">1500</div>
+                <div class="text-slate-400 text-sm mt-1">Peak Rating</div>
+            </div>
+            <div class="bg-slate-900/50 border border-indigo-800/30 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-cyan-400 mono" th:text="${#numbers.formatDecimal(player.avgPointsPerWin, 0, 1)}">0</div>
+                <div class="text-slate-400 text-sm mt-1">Avg Pts/Win</div>
+            </div>
+            <!-- Momentum Score -->
+            <div class="bg-slate-900/50 border border-indigo-800/30 rounded-xl p-4 text-center"
+                 th:classappend="${player.momentumScore >= 30} ? 'border-red-800/50' : (${player.momentumScore <= -30} ? 'border-blue-800/50' : '')">
+                <div class="text-2xl font-bold mono"
+                     th:classappend="${player.momentumScore >= 10} ? 'text-green-400' : (${player.momentumScore <= -10} ? 'text-red-400' : 'text-slate-400')"
+                     th:text="${player.momentumScoreFormatted}">+0</div>
+                <div class="text-slate-400 text-sm mt-1">Momentum</div>
+            </div>
+            <!-- Consistency Score -->
+            <div class="bg-slate-900/50 border border-indigo-800/30 rounded-xl p-4 text-center">
+                <div class="text-xl font-bold mono text-purple-400 flex items-center justify-center gap-1">
+                    <span th:text="${player.consistencyEmoji}">🎯</span>
+                </div>
+                <div class="text-slate-400 text-sm mt-1" th:text="${player.consistencyLabel}">Steady</div>
+            </div>
+        </div>
+
+        <!-- Rating Progression Chart -->
+        <div class="bg-slate-900/50 border border-indigo-800/30 rounded-xl p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-xl font-semibold">📈 Rating Progression</h3>
+                    <p class="text-slate-500 text-sm">Rating changes over recent matches</p>
+                </div>
+                <div class="flex items-center gap-4 text-sm">
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span> Win
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-red-500"></span> Loss
+                    </span>
+                </div>
+            </div>
+            <div class="relative h-64">
+                <canvas id="ratingChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Rating Changes -->
+        <div class="bg-slate-900/50 border border-indigo-800/30 rounded-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-800">
+                <h3 class="text-xl font-semibold">📊 Recent Match History</h3>
+                <p class="text-slate-500 text-sm">Last 20 rating changes</p>
+            </div>
+            
+            <table class="w-full">
+                <thead class="bg-slate-800/50 text-left text-sm text-slate-400">
+                    <tr>
+                        <th class="px-4 py-3">Date</th>
+                        <th class="px-4 py-3">Result</th>
+                        <th class="px-4 py-3">Opponent</th>
+                        <th class="px-4 py-3 text-center">Score</th>
+                        <th class="px-4 py-3 text-center">Odds</th>
+                        <th class="px-4 py-3 text-center">Expected%</th>
+                        <th class="px-4 py-3 text-center">Points</th>
+                        <th class="px-4 py-3 text-center">Rating</th>
+                        <th class="px-4 py-3">Tournament</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/50">
+                    <tr th:each="change : ${recentChanges}" 
+                        class="hover:bg-slate-800/30 transition-colors"
+                        th:classappend="${change.won} ? 'bg-emerald-950/10' : 'bg-red-950/10'">
+                        <!-- Date -->
+                        <td class="px-4 py-3 text-sm mono text-slate-400" th:text="${change.matchDate}">2026-01-27</td>
+                        <!-- Result -->
+                        <td class="px-4 py-3">
+                            <span th:if="${change.won}" class="px-2 py-0.5 bg-emerald-900/50 text-emerald-400 rounded text-sm font-medium">W</span>
+                            <span th:unless="${change.won}" class="px-2 py-0.5 bg-red-900/50 text-red-400 rounded text-sm font-medium">L</span>
+                        </td>
+                        <!-- Opponent -->
+                        <td class="px-4 py-3">
+                            <a th:href="@{/ui/owl/player/{key}(key=${change.opponentKey})}"
+                               class="hover:text-amber-400 transition-colors"
+                               th:text="${change.opponentName}">Opponent</a>
+                            <span class="text-slate-500 text-sm ml-1">(<span th:text="${#numbers.formatDecimal(change.opponentRatingBefore, 0, 0)}">1500</span>)</span>
+                        </td>
+                        <!-- Score -->
+                        <td class="px-4 py-3 text-center mono text-sm" th:text="${change.score ?: '-'}">6-3, 6-4</td>
+                        <!-- Odds -->
+                        <td class="px-4 py-3 text-center">
+                            <span th:if="${change.odds != null}" class="mono text-sm text-amber-400" th:text="${change.oddsFormatted}">1.50</span>
+                            <span th:unless="${change.odds != null}" class="text-slate-600">-</span>
+                        </td>
+                        <!-- Expected Win % -->
+                        <td class="px-4 py-3 text-center mono text-sm text-slate-400" th:text="${change.expectedWinProbFormatted}">50%</td>
+                        <!-- Points Change -->
+                        <td class="px-4 py-3 text-center">
+                            <span class="font-bold mono"
+                                  th:classappend="${change.pointsChange >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                                  th:text="${change.pointsChangeFormatted}">+10.5</span>
+                        </td>
+                        <!-- Rating After -->
+                        <td class="px-4 py-3 text-center mono text-sm" th:text="${#numbers.formatDecimal(change.ratingAfter, 0, 1)}">1510.5</td>
+                        <!-- Tournament -->
+                        <td class="px-4 py-3 text-sm text-slate-500 truncate max-w-[200px]" th:text="${change.tournamentName}">Tournament</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div th:if="${#lists.isEmpty(recentChanges)}" class="py-12 text-center text-slate-500">
+                No match history available
+            </div>
+        </div>
+
+        <!-- Rating Change Legend -->
+        <div class="mt-8 bg-slate-900/50 border border-indigo-800/30 rounded-xl p-6">
+            <h3 class="text-lg font-semibold mb-4">📖 Understanding the Metrics</h3>
+            <div class="grid md:grid-cols-3 gap-6 text-slate-400 text-sm">
+                <div>
+                    <h4 class="font-medium text-slate-200 mb-2">Point Changes</h4>
+                    <ul class="space-y-1 list-disc list-inside">
+                        <li>Big gains = upset wins vs higher-rated</li>
+                        <li>Small gains = expected wins</li>
+                        <li>Big losses = expected wins that were lost</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium text-slate-200 mb-2">Momentum (last 7 matches)</h4>
+                    <ul class="space-y-1 list-disc list-inside">
+                        <li><span class="text-red-400">🔥 Hot:</span> +30 or more</li>
+                        <li><span class="text-green-400">📈 Rising:</span> +10 to +30</li>
+                        <li><span class="text-slate-400">➡️ Stable:</span> -10 to +10</li>
+                        <li><span class="text-yellow-400">📉 Cooling:</span> -10 to -30</li>
+                        <li><span class="text-blue-400">🧊 Cold:</span> -30 or worse</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium text-slate-200 mb-2">Consistency (std dev)</h4>
+                    <ul class="space-y-1 list-disc list-inside">
+                        <li><span class="text-emerald-400">🎯 Rock Solid:</span> σ &lt; 8</li>
+                        <li><span class="text-cyan-400">⚖️ Steady:</span> σ 8-15</li>
+                        <li><span class="text-amber-400">🎲 Volatile:</span> σ 15-25</li>
+                        <li><span class="text-purple-400">🌪️ Wild Card:</span> σ &gt; 25</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Chart.js Script -->
+    <script th:inline="javascript">
+        // Fetch chart data from API
+        const playerKey = /*[[${player.playerKey}]]*/ '';
+        
+        fetch(`/ui/owl/player/${playerKey}/chart-data`)
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('ratingChart').getContext('2d');
+                
+                // Create gradient
+                const gradient = ctx.createLinearGradient(0, 0, 0, 256);
+                gradient.addColorStop(0, 'rgba(251, 191, 36, 0.3)');
+                gradient.addColorStop(1, 'rgba(251, 191, 36, 0)');
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'OWL Rating',
+                            data: data.ratings,
+                            borderColor: '#f59e0b',
+                            backgroundColor: gradient,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: data.colors,
+                            pointBorderColor: data.colors,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                titleColor: '#f8fafc',
+                                bodyColor: '#94a3b8',
+                                borderColor: '#334155',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        const rating = context.parsed.y.toFixed(1);
+                                        const tooltip = data.tooltips[context.dataIndex] || '';
+                                        return [`Rating: ${rating}`, tooltip].filter(Boolean);
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: 'rgba(51, 65, 85, 0.3)'
+                                },
+                                ticks: {
+                                    color: '#64748b',
+                                    maxTicksLimit: 8
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    color: 'rgba(51, 65, 85, 0.3)'
+                                },
+                                ticks: {
+                                    color: '#64748b'
+                                },
+                                suggestedMin: Math.min(...data.ratings) - 20,
+                                suggestedMax: Math.max(...data.ratings) + 20
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading chart data:', error);
+                document.getElementById('ratingChart').parentElement.innerHTML = 
+                    '<p class="text-center text-slate-500 py-8">Unable to load chart data</p>';
+            });
+    </script>
+</body>
+</html>

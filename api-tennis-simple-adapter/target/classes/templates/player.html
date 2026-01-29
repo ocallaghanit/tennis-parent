@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${player != null} ? ${player.playerName} + ' - Tennis Data' : 'Player Details'">Player Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+        .mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <!-- Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🎾</span>
+                <h1 class="text-xl font-bold text-emerald-400">Tennis Data Adapter</h1>
+            </div>
+            <nav class="flex gap-6 text-sm">
+                <a href="/ui/dashboard" class="text-slate-400 hover:text-emerald-400 transition-colors">Dashboard</a>
+                <a href="/ui/fixtures" class="text-slate-400 hover:text-emerald-400 transition-colors">Fixtures</a>
+                <a href="/ui/players" class="text-emerald-400">Players</a>
+                <a href="/ui/sync" class="text-slate-400 hover:text-emerald-400 transition-colors">Sync</a>
+                <a href="/swagger-ui.html" class="text-slate-500 hover:text-slate-300 transition-colors">API Docs →</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Error state -->
+        <div th:if="${error}" class="bg-red-900/30 border border-red-800 rounded-xl p-6 text-center">
+            <p class="text-red-400 text-lg" th:text="${error}">Error message</p>
+            <a href="/ui/players" class="inline-block mt-4 text-emerald-400 hover:text-emerald-300">← Back to Players</a>
+        </div>
+
+        <!-- Player details -->
+        <div th:if="${player}">
+            <!-- Back link -->
+            <a href="/ui/players" class="inline-flex items-center gap-2 text-slate-400 hover:text-emerald-400 mb-6 transition-colors">
+                ← Back to Players
+            </a>
+
+            <!-- Player Header -->
+            <div class="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-8 mb-8">
+                <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
+                    <!-- Player Image -->
+                    <div class="flex-shrink-0">
+                        <img th:if="${playerImage}" th:src="${playerImage}" 
+                             alt="Player Photo" 
+                             class="w-40 h-40 rounded-full object-cover border-4 border-emerald-400 shadow-lg shadow-emerald-400/20"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div th:unless="${playerImage}" 
+                             class="w-40 h-40 rounded-full bg-slate-700 flex items-center justify-center text-6xl border-4 border-slate-600">
+                            👤
+                        </div>
+                    </div>
+                    
+                    <!-- Player Info -->
+                    <div class="text-center md:text-left flex-1">
+                        <h2 class="text-4xl font-bold text-white mb-2" th:text="${player.playerName}">Player Name</h2>
+                        <div class="flex flex-wrap justify-center md:justify-start gap-3 mb-4">
+                            <span th:if="${player.country}" class="px-3 py-1 bg-slate-700 rounded-full text-sm">
+                                🌍 <span th:text="${player.country}">Country</span>
+                            </span>
+                            <span th:if="${player.currentRank}" class="px-3 py-1 bg-emerald-900/50 text-emerald-400 rounded-full text-sm">
+                                🏆 Rank #<span th:text="${player.currentRank}">1</span>
+                            </span>
+                            <span th:if="${player.hand}" class="px-3 py-1 bg-slate-700 rounded-full text-sm">
+                                ✋ <span th:text="${player.hand}">Right</span>
+                            </span>
+                        </div>
+                        
+                        <!-- Win/Loss Record -->
+                        <div class="flex justify-center md:justify-start gap-6 text-center">
+                            <div>
+                                <div class="text-3xl font-bold text-emerald-400" th:text="${wins}">0</div>
+                                <div class="text-xs text-slate-500 uppercase">Wins</div>
+                            </div>
+                            <div class="text-3xl text-slate-600">-</div>
+                            <div>
+                                <div class="text-3xl font-bold text-red-400" th:text="${losses}">0</div>
+                                <div class="text-xs text-slate-500 uppercase">Losses</div>
+                            </div>
+                            <div class="border-l border-slate-700 pl-6">
+                                <div class="text-3xl font-bold text-slate-300" th:text="${totalMatches}">0</div>
+                                <div class="text-xs text-slate-500 uppercase">Total Matches</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Matches -->
+            <div th:if="${!upcomingMatches.isEmpty()}" class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span>📅</span> Upcoming Matches
+                </h3>
+                <div class="space-y-3">
+                    <a th:each="match : ${upcomingMatches}" 
+                       th:href="@{/ui/match/{id}(id=${match.eventKey})}"
+                       class="block p-4 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <span class="text-slate-400 text-sm mono" th:text="${match.eventDate}">Date</span>
+                                <span class="text-white">
+                                    <span th:text="${player.playerKey == match.firstPlayerKey} ? ${match.secondPlayerName} : ${match.firstPlayerName}">Opponent</span>
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="px-2 py-0.5 bg-blue-900/50 text-blue-400 rounded text-xs" th:text="${match.status}">Scheduled</span>
+                                <span class="text-slate-500">→</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recent Match History -->
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span>📊</span> Recent Results
+                    <span class="text-slate-500 text-sm font-normal">(last 20 matches)</span>
+                </h3>
+                
+                <div th:if="${finishedMatches.isEmpty()}" class="text-center py-8 text-slate-500">
+                    <p class="text-4xl mb-3">📭</p>
+                    <p>No match history found</p>
+                </div>
+                
+                <div th:unless="${finishedMatches.isEmpty()}" class="space-y-2">
+                    <a th:each="match : ${finishedMatches}" 
+                       th:href="@{/ui/match/{id}(id=${match.eventKey})}"
+                       class="flex items-center justify-between p-4 rounded-lg hover:bg-slate-800/50 transition-colors group">
+                        <div class="flex items-center gap-4">
+                            <!-- W/L indicator - handle both direct playerKey and "First/Second Player" winner formats -->
+                            <span th:if="${player.playerKey == match.winner 
+                                           || (match.winner == 'First Player' && player.playerKey == match.firstPlayerKey) 
+                                           || (match.winner == 'Second Player' && player.playerKey == match.secondPlayerKey)}" 
+                                  class="w-8 h-8 bg-emerald-500 rounded flex items-center justify-center text-sm font-bold text-white">W</span>
+                            <span th:unless="${player.playerKey == match.winner 
+                                               || (match.winner == 'First Player' && player.playerKey == match.firstPlayerKey) 
+                                               || (match.winner == 'Second Player' && player.playerKey == match.secondPlayerKey)}" 
+                                  class="w-8 h-8 bg-red-500 rounded flex items-center justify-center text-sm font-bold text-white">L</span>
+                            
+                            <!-- Date -->
+                            <span class="text-slate-400 text-sm mono w-24" th:text="${match.eventDate}">Date</span>
+                            
+                            <!-- Opponent -->
+                            <span class="text-white">
+                                vs <span th:text="${player.playerKey == match.firstPlayerKey} ? ${match.secondPlayerName} : ${match.firstPlayerName}">Opponent</span>
+                            </span>
+                        </div>
+                        
+                        <div class="flex items-center gap-4">
+                            <!-- Score -->
+                            <span class="mono text-sm" th:text="${match.score ?: '-'}">Score</span>
+                            
+                            <!-- Tournament -->
+                            <span class="text-slate-500 text-sm hidden md:inline" th:text="${match.tournamentKey}">Tournament</span>
+                            
+                            <span class="text-slate-600 group-hover:text-emerald-400 transition-colors">→</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Player Details Card -->
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span>📋</span> Player Details
+                </h3>
+                <div class="grid md:grid-cols-2 gap-4 text-sm">
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Full Name</span>
+                        <span class="text-white" th:text="${player.playerName ?: '-'}">Name</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Country</span>
+                        <span class="text-white" th:text="${player.country ?: '-'}">Country</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Current Rank</span>
+                        <span class="text-white mono" th:text="${player.currentRank != null} ? '#' + ${player.currentRank} : '-'">#1</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Playing Hand</span>
+                        <span class="text-white" th:text="${player.hand ?: '-'}">Right</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Player Key</span>
+                        <span class="text-slate-500 mono text-xs" th:text="${player.playerKey}">key</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Last Updated</span>
+                        <span class="text-slate-500 text-xs" th:text="${player.updatedAt}">timestamp</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Raw Data (collapsible) -->
+            <details class="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
+                <summary class="p-6 cursor-pointer hover:bg-slate-800/50 transition-colors">
+                    <span class="text-lg font-semibold">🔧 Raw API Data</span>
+                    <span class="text-slate-500 text-sm ml-2">(click to expand)</span>
+                </summary>
+                <div class="p-6 pt-0 border-t border-slate-800">
+                    <pre class="bg-slate-950 rounded-lg p-4 overflow-x-auto text-xs mono text-slate-400" 
+                         th:text="${rawJson ?: 'No raw data'}">Raw JSON</pre>
+                </div>
+            </details>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 mt-12 py-6 text-center text-slate-600 text-sm">
+        Tennis Data Adapter • Powered by API Tennis
+    </footer>
+</body>
+</html>
+

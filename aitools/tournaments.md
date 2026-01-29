@@ -1,0 +1,587 @@
+# Tournament Locations
+
+- Aachen: Aachen
+- Abidjan: Abidjan
+- Acapulco: Acapulco
+- Adana: Adana
+- Adelaide: Adelaide
+- Agadir: Agadir
+- Aix en Provence: Aix-en-Provence
+- Aix-en-Provence: Aix-en-Provence
+- Akko: Akko
+- Al Zahra: Al Zahra
+- Al-Fujairah: Al-Fujairah
+- Alaminos-Larnaca: Alaminos-Larnaca
+- Albany: Albany
+- Albury: Albury
+- Aldershot: Aldershot
+- Algiers: Algiers
+- Alicante: Alicante
+- Almaty: Almaty
+- Alphen aan den Rijn: Alphen aan den Rijn
+- Altreichenau: Altreichenau
+- Alwakra: Alwakra
+- Amarante: Amarante
+- Amelia Island: Amelia Island
+- Amersfoort: Amersfoort
+- Amstelveen: Amstelveen
+- Amstetten: Amstetten
+- Anapoima: Anapoima
+- Ancona: Ancona
+- Andijan: Andijan
+- Andong: Andong
+- Andrezieux-Boutheon: Andrezieux-Boutheon
+- Angers: Angers
+- Anif: Anif
+- Ankar: Ankar
+- Ankara: Ankara
+- Annenheim: Annenheim
+- Ann Arbor: Ann Arbor
+- Anning: Anning
+- Antalya: Antalya
+- Antwerp: Antwerp
+- Anzere: Anzere
+- Aosta: Aosta
+- Apia: Apia
+- Appiano: Appiano
+- Aracaju: Aracaju
+- Arcadia, CA: Arcadia
+- Arequipa: Arequipa
+- Arlon: Arlon
+- Astana: Astana
+- Athens: Athens
+- Atlanta: Atlanta
+- Auckland: Auckland
+- Auray: Auray
+- Austin, TX: Austin
+- Australian Open: Melbourne
+- Bad Waltersdorf: Bad Waltersdorf
+- Bakersfield, CA: Bakersfield
+- Balatonalmadi: Balatonalmadi
+- Balikpapan: Balikpapan
+- Balma: Balma
+- Bangalore: Bangalore
+- Bangkok: Bangkok
+- Barcelona: Barcelona
+- Bari: Bari
+- Barranquilla: Barranquilla
+- Bastad: Bastad
+- Baza: Baza
+- Beijing: Beijing
+- Belfast: Belfast
+- Bellinzona: Bellinzona
+- Bengaluru: Bengaluru
+- Benicarlo: Benicarlo
+- Benidorm: Benidorm
+- Bergamo: Bergamo
+- Berkeley, CA: Berkeley
+- Berlin: Berlin
+- Bern: Bern
+- Bethany Beach, DE: Bethany Beach
+- Bhopal: Bhopal
+- Biarritz: Biarritz
+- Biel: Biel
+- Biel/Bienne: Biel/Bienne
+- Biella: Biella
+- Bigorre: Bigorre
+- Billie Jean King Cup - Group I: Various
+- Billie Jean King Cup - Group II: Various
+- Billie Jean King Cup - Group III: Various
+- Billie Jean King Cup - Group IV: Various
+- Billie Jean King Cup - World Group: Various
+- Birmingham: Birmingham
+- Bistrita: Bistrita
+- Blois: Blois
+- Boca Raton, FL: Boca Raton
+- Bodrum: Bodrum
+- Bogota: Bogota
+- Bol: Bol
+- Bolzano: Bolzano
+- Bordeaux: Bordeaux
+- Bradenton, FL: Bradenton
+- Brasilia: Brasilia
+- Brasov: Brasov
+- Bratislava: Bratislava
+- Braunschweig: Braunschweig
+- Brescia: Brescia
+- Brighton: Brighton
+- Brisbane: Brisbane
+- Bronx, NY: Bronx
+- Bucharest: Bucharest
+- Budapest: Budapest
+- Buenos Aires: Buenos Aires
+- Bujumbura: Bujumbura
+- Burnie: Burnie
+- Buzau: Buzau
+- Bydgoszcz: Bydgoszcz
+- Cagnes-Sur-Mer: Cagnes-Sur-Mer
+- Cairo: Cairo
+- Caldas da Rainha: Caldas da Rainha
+- Calgary: Calgary
+- Caloundra: Caloundra
+- Calvi: Calvi
+- Canberra: Canberra
+- Cancun: Cancun
+- Cantanhede: Cantanhede
+- Cape Town: Cape Town
+- Caracas: Caracas
+- Cardiff: Cardiff
+- Carrara: Carrara
+- Casablanca: Casablanca
+- Caserta: Caserta
+- Castellon: Castellon
+- Cayo Santa Maria: Cayo Santa Maria
+- Ceska Lipa: Ceska Lipa
+- Chacabuco: Chacabuco
+- Changwon: Changwon
+- Charleston, SC: Charleston
+- Charlottesville, VA: Charlottesville
+- Chennai: Chennai
+- Cherbourg En Cotentin: Cherbourg-En-Cotentin
+- Cherbourg-en-Cotentin: Cherbourg-en-Cotentin
+- Chiasso: Chiasso
+- Chihuahua: Chihuahua
+- Chisinau: Chisinau
+- Christchurch: Christchurch
+- Clermont-Ferrand: Clermont-Ferrand
+- Cluj Napoca: Cluj-Napoca
+- Coimbra: Coimbra
+- Collonge-Bellerive: Collonge-Bellerive
+- Cologne: Cologne
+- Columbus, OH: Columbus
+- Cordenons: Cordenons
+- Cordoba: Cordoba
+- Corroios-Seixal: Corroios-Seixal
+- Cotonou: Cotonou
+- Croissy-Beaubourg: Croissy-Beaubourg
+- Cuiaba: Cuiaba
+- Curitiba: Curitiba
+- Daegu: Daegu
+- Dakar: Dakar
+- Dallas, TX: Dallas
+- Darmstadt: Darmstadt
+- Darwin: Darwin
+- Daytona Beach, FL: Daytona Beach
+- Decatur, IL: Decatur
+- Den Haag: Den Haag
+- Denia: Denia
+- Dijon: Dijon
+- Doksy - Stare Splavy: Doksy - Stare Splavy
+- Don Benito: Don Benito
+- Doha: Doha
+- Dubai: Dubai
+- Dublin: Dublin
+- Duffel: Duffel
+- Dushanbe: Dushanbe
+- Eastbourne: Eastbourne
+- Edmond, OK: Edmond
+- Edmonton: Edmonton
+- Edgbaston: Edgbaston
+- El Espinar/Segovia: El Espinar/Segovia
+- Erwitte: Erwitte
+- Esch/Alzette: Esch/Alzette
+- Estoril: Estoril
+- Evansville, IN: Evansville
+- Evora: Evora
+- Faro: Faro
+- Feira de Santana: Feira de Santana
+- Feld am See: Feld am See
+- Figueira Da Foz: Figueira Da Foz
+- Florence: Florence
+- Florence, SC: Florence
+- Florianopolis: Florianopolis
+- Florianópolis: Florianópolis
+- Fort Worth, TX: Fort Worth
+- Foxhills: Foxhills
+- French Open: Paris
+- Fredericton: Fredericton
+- Frydek Mistek: Frydek Mistek
+- Fujairah: Fujairah
+- Fukuoka: Fukuoka
+- Funchal: Funchal
+- Fuzhou: Fuzhou
+- Gdansk: Gdansk
+- Geneva: Geneva
+- Genoa: Genoa
+- Getxo: Getxo
+- Gifu: Gifu
+- Glasgow: Glasgow
+- Gold Coast: Gold Coast
+- Goyang: Goyang
+- Grado: Grado
+- Granby: Granby
+- Grenoble: Grenoble
+- Grodzisk Mazowiecki: Grodzisk Mazowiecki
+- Guadalajara: Guadalajara
+- Guayaquil: Guayaquil
+- Guimaraes: Guimaraes
+- Guiyang: Guiyang
+- Gurugram: Gurugram
+- Haabneeme: Haabneeme
+- Hamamatsu: Hamamatsu
+- Hamburg: Hamburg
+- Hammamet: Hammamet
+- Hechingen: Hechingen
+- Helsinki: Helsinki
+- Heraklion: Heraklion
+- Herrenschwanden: Herrenschwanden
+- Hillcrest: Hillcrest
+- Hilton Head Island, SC: Hilton Head Island
+- Hobart: Hobart
+- Hong Kong: Hong Kong
+- Hopman Cup: Various
+- Horb: Horb
+- Hua Hin: Hua Hin
+- Huzhou: Huzhou
+- Ibague: Ibague
+- Iasi: Iasi
+- Indian Harbour Beach, FL: Indian Harbour Beach
+- Indian Wells: Indian Wells
+- Indore: Indore
+- Incheon: Incheon
+- Irapuato: Irapuato
+- Ismaning: Ismaning
+- Istanbul: Istanbul
+- Jablonec nad Nisou: Jablonec nad Nisou
+- Jackson, MS: Jackson
+- Jakarta: Jakarta
+- Jerusalem: Jerusalem
+- Jinan: Jinan
+- Jodhpur: Jodhpur
+- Johannesburg / Ellispark: Johannesburg
+- Johannesburg / Markspark: Johannesburg
+- Jonkoping: Jonkoping
+- Joue les Tours: Joue-les-Tours
+- Joue-les-Tours: Joue-les-Tours
+- Junin: Junin
+- Kachreti: Kachreti
+- Karaganda: Karaganda
+- Karuizawa: Karuizawa
+- Kashiwa: Kashiwa
+- Kazan: Kazan
+- Kayseri: Kayseri
+- Kemer: Kemer
+- Kiryat Motzkin: Kiryat Motzkin
+- Klagenfurt: Klagenfurt
+- Klosters: Klosters
+- Knokke-Heist: Knokke-Heist
+- Kofu: Kofu
+- Koge: Koge
+- Koksijde: Koksijde
+- Koper: Koper
+- Kunshan: Kunshan
+- Kursumlijska Banja: Kursumlijska Banja
+- Kurume: Kurume
+- Kurume+H: Kurume
+- Kuwait: Kuwait
+- Kyiv: Kyiv
+- Kyoto: Kyoto
+- La Bisbal D'Emporda: La Bisbal D'Emporda
+- La Marsa: La Marsa
+- La Nucia: La Nucia
+- Lagos: Lagos
+- Lahti: Lahti
+- Launceston: Launceston
+- Las Palmas de Gran Canaria: Las Palmas
+- Las Vegas: Las Vegas
+- Las Vegas, NV: Las Vegas
+- Le Gosier: Le Gosier
+- Le Lamentin: Le Lamentin
+- Le Neubourg: Le Neubourg
+- Le Havre: Le Havre
+- Leiria: Leiria
+- Leme: Leme
+- Les Contamines-Montjoie: Les Contamines-Montjoie
+- Les Franqueses del Valles: Les Franqueses del Valles
+- Leszno: Leszno
+- Lexington, KY: Lexington
+- Liberec: Liberec
+- Liepaja: Liepaja
+- Lima: Lima
+- Limassol: Limassol
+- Lisbon: Lisbon
+- Llandudno: Llandudno
+- Lodz: Lodz
+- London: London
+- Lopota: Lopota
+- Los Angeles: Los Angeles
+- Loughborough: Loughborough
+- Loule: Loule
+- Lousada: Lousada
+- Luan: Luan
+- Lujan: Lujan
+- Luzhou: Luzhou
+- Lyon: Lyon
+- Macon: Macon
+- Macon, GA: Macon
+- Madrid: Madrid
+- Makinohara: Makinohara
+- Malibu: Malibu
+- Malibu, CA: Malibu
+- Malmo: Malmo
+- Manacor: Manacor
+- Manama: Manama
+- Manchester: Manchester
+- Marbella: Marbella
+- Maribor: Maribor
+- Marseille: Marseille
+- Medellin: Medellin
+- Meerbusch: Meerbusch
+- Meitar: Meitar
+- Melbourne: Melbourne
+- Mendoza: Mendoza
+- Mexico City: Mexico City
+- Miami: Miami
+- Miami, FL: Miami
+- Mildura: Mildura
+- Milovice: Milovice
+- Mogi das Cruzes: Mogi das Cruzes
+- Mogyorod: Mogyorod
+- Mohammedia: Mohammedia
+- Monastir: Monastir
+- Montemor-O-Novo: Montemor-O-Novo
+- Montemor-o-Novo: Montemor-o-Novo
+- Montpellier: Montpellier
+- Montreux: Montreux
+- Monzon: Monzon
+- Morelia: Morelia
+- Moscow: Moscow
+- Mosquera: Mosquera
+- Murska Sobota: Murska Sobota
+- Naiman: Naiman
+- Nairobi: Nairobi
+- Nakhon Pathom: Nakhon Pathom
+- Nakhon Si Thammarat: Nakhon Si Thammarat
+- Nanao: Nanao
+- Nanchang: Nanchang
+- Nancy: Nancy
+- Nantes: Nantes
+- Naples, FL: Naples
+- Navi Mumbai: Navi Mumbai
+- Netanya: Netanya
+- Neuquen: Neuquen
+- New Delhi: New Delhi
+- New York: New York
+- Newport Beach, CA: Newport Beach
+- Nonthaburi: Nonthaburi
+- Norman, OK: Norman
+- Nottingham: Nottingham
+- Nur-Sultan: Nur-Sultan
+- Oeiras: Oeiras
+- Olomouc: Olomouc
+- Oldenzaal: Oldenzaal
+- Orlando, FL: Orlando
+- Ortisei: Ortisei
+- Osaka: Osaka
+- Osijek: Osijek
+- Otocec: Otocec
+- Ourense: Ourense
+- Palma del Rio: Palma del Rio
+- Palmanova: Palmanova
+- Palm Coast, FL: Palm Coast
+- Papamoa: Papamoa
+- Paris: Paris
+- Parnu: Parnu
+- Pazardzhik: Pazardzhik
+- Pelham, AL: Pelham
+- Perigueux: Perigueux
+- Pergamino: Pergamino
+- Perth: Perth
+- Pescara: Pescara
+- Petange: Petange
+- Petit-Bourg: Petit-Bourg
+- Pilar: Pilar
+- Piracicaba: Piracicaba
+- Platja D'Aro: Platja D'Aro
+- Playford: Playford
+- Poertschach: Poertschach
+- Poitiers: Poitiers
+- Porto: Porto
+- Portoroz: Portoroz
+- Potchefstroom: Potchefstroom
+- Prague: Prague
+- Prerov: Prerov
+- Pretoria: Pretoria
+- Prokuplje: Prokuplje
+- Pune: Pune
+- Punta Cana: Punta Cana
+- Qian Daohu: Qian Daohu
+- Quebec City: Quebec City
+- Quinta do Lago: Quinta do Lago
+- Raanana: Raanana
+- Radom: Radom
+- Rancho Santa Fe: Rancho Santa Fe
+- Rancho Santa Fe, CA: Rancho Santa Fe
+- Redding, CA: Redding
+- Reims: Reims
+- Reus: Reus
+- Ricany: Ricany
+- Rio Claro: Rio Claro
+- Rio de Janeiro: Rio de Janeiro
+- Rio do Sul: Rio do Sul
+- Roehampton: Roehampton
+- Rome: Rome
+- Rome, GA: Rome
+- Rosmalen: Rosmalen
+- Rotterdam: Rotterdam
+- Sabadell: Sabadell
+- Saguenay: Saguenay
+- Saint Etienne: Saint-Étienne
+- Saint-Gaudens: Saint-Gaudens
+- Saint-Malo: Saint-Malo
+- Saint-Palais-sur-Mer: Saint-Palais-sur-Mer
+- Salinas: Salinas
+- San Bartolome: San Bartolome
+- San Bartolome de Tirajana: San Bartolome de Tirajana
+- San Miguel de Tucuman: San Miguel de Tucuman
+- San Rafael, CA: San Rafael
+- San Sebastian: San Sebastian
+- Santa Margherita di Pula: Santa Margherita di Pula
+- Santarem: Santarem
+- Santiago: Santiago
+- Santo Domingo: Santo Domingo
+- Sao Paulo: Sao Paulo
+- Sarasota, FL: Sarasota
+- Saskatoon: Saskatoon
+- Segovia: Segovia
+- Selva Gardena: Selva Gardena
+- Setubal: Setubal
+- Seville: Seville
+- Sharm ElSheikh: Sharm ElSheikh
+- Shenzhen: Shenzhen
+- Sibenik: Sibenik
+- Skopje: Skopje
+- Slobozia: Slobozia
+- Solapur: Solapur
+- Solarino: Solarino
+- Sopo: Sopo
+- Southaven, MS: Southaven
+- Sozopol: Sozopol
+- Split: Split
+- Spring, TX: Spring
+- St. Petersburg: St. Petersburg
+- Stockholm: Stockholm
+- Stuttgart: Stuttgart
+- Stuttgart-Vaihingen: Stuttgart-Vaihingen
+- Sumter, SC: Sumter
+- Sunderland: Sunderland
+- Swan Hill: Swan Hill
+- Sydney: Sydney
+- Szekesfehervar: Szekesfehervar
+- Taichung: Taichung
+- Tainan: Tainan
+- Taipei: Taipei
+- Taizhou: Taizhou
+- Tallinn: Tallinn
+- Tampa, FL: Tampa
+- Tarvisio: Tarvisio
+- Targu Mures: Targu Mures
+- Tauste: Tauste
+- Tauste-Zaragoza: Tauste
+- Tauranga: Tauranga
+- Tbilisi: Tbilisi
+- Telavi: Telavi
+- Templeton, CA: Templeton
+- Terrassa: Terrassa
+- The Hague: The Hague
+- Tianjin: Tianjin
+- Timaru: Timaru
+- Tokyo: Tokyo
+- Torino: Torino
+- Toronto: Toronto
+- Tossa de Mar: Tossa de Mar
+- Traralgon: Traralgon
+- Trieste: Trieste
+- Trnava: Trnava
+- Troisdorf: Troisdorf
+- Tucuman: Tucuman
+- Tyler, TX: Tyler
+- US Open: New York
+- Uvero Alto, Punta Cana: Punta Cana
+- Ust-Kamenogorsk: Ust-Kamenogorsk
+- Vacaria: Vacaria
+- Valencia: Valencia
+- Valladolid: Valladolid
+- Varberg: Varberg
+- Varna: Varna
+- Verbier: Verbier
+- Veracruz: Veracruz
+- Vero Beach: Vero Beach
+- Vero Beach, FL: Vero Beach
+- Versmold: Versmold
+- Vienna: Vienna
+- Vigo: Vigo
+- Villa Maria: Villa Maria
+- Villeneuve d'Ascq: Villeneuve d'Ascq
+- Vitoria - Gasteiz: Vitoria-Gasteiz
+- Vitoria-Gasteiz: Vitoria-Gasteiz
+- Vrnjacka Banja: Vrnjacka Banja
+- Waco: Waco
+- Wagga Wagga: Wagga Wagga
+- Warmbad Villach: Warmbad Villach
+- Warsaw: Warsaw
+- Washington: Washington
+- Waterloo: Waterloo
+- Wellington: Wellington
+- Wels: Wels
+- Wembley: London
+- Wenshan: Wenshan
+- West Lakes - Adelaide: Adelaide
+- Westchester: Westchester
+- Westende: Westende
+- Westende-Middelkerke: Westende-Middelkerke
+- Weston, FL: Weston
+- Wetzlar: Wetzlar
+- Wichita: Wichita
+- Wichita, KS: Wichita
+- Wiesbaden: Wiesbaden
+- Williamsburg: Williamsburg
+- Wimbledon: London
+- Winnetka: Winnetka
+- Winnipeg: Winnipeg
+- Winston Salem: Winston-Salem
+- Winston-Salem: Winston-Salem
+- Wirral: Wirral
+- Woking-Foxhills: Woking
+- Wolfsburg: Wolfsburg
+- Worcester: Worcester
+- World Doubles Cup: Various
+- World TeamTennis: Various
+- World Tennis Challenge: Various
+- World Tennis Championship: Various
+- World Tennis Day: Various
+- World Tennis League: Various
+- World Tennis League Teams: Various
+- Wrexham: Wrexham
+- Wroclaw: Wroclaw
+- Wuhai: Wuhai
+- Wuhan: Wuhan
+- Wuning: Wuning
+- Wuxi: Wuxi
+- Xabia: Xabia
+- Xativa: Xativa
+- Xi'an: Xi'an
+- Xuzhou: Xuzhou
+- Yakima: Yakima
+- Yecla: Yecla
+- Yeong Wol: Yeongwol
+- Yeongwol: Yeongwol
+- Yokkaichi: Yokkaichi
+- Yokohama: Yokohama
+- Yoshkar Ola: Yoshkar-Ola
+- Yuba City: Yuba City
+- Yuxi: Yuxi
+- Zacatecas: Zacatecas
+- Zadar: Zadar
+- Zagreb: Zagreb
+- Zaragoza: Zaragoza
+- Zawada: Zawada
+- Zephyrhills, FL: Zephyrhills
+- Zhangjiagang: Zhangjiagang
+- Zhengzhou: Zhengzhou
+- Zhuhai: Zhuhai
+- Zilina Open: Zilina
+- Zlin: Zlin
+- Zug: Zug
+- Zuidwolde: Zuidwolde
+- Zürich: Zürich

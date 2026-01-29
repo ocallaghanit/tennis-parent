@@ -2,6 +2,14 @@ spring:
   application:
     name: api-tennis-simple-adapter
   
+  mvc:
+    favicon:
+      enabled: false
+  
+  web:
+    resources:
+      add-mappings: true
+  
   data:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/tennis}

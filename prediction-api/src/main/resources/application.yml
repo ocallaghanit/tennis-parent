@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: prediction-api
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://prediction_service:prediction_secure_password_2026@localhost:27017/tennis?authSource=tennis}
+
+server:
+  port: ${SERVER_PORT:8082}
+
+# API Tennis Adapter
+adapter:
+  api:
+    url: ${ADAPTER_API_URL:http://api-tennis-simple-adapter:8080}
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Swagger/OpenAPI
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /api-docs
+
+# Logging
+logging:
+  level:
+    com.tennis.prediction: DEBUG
+    org.springframework.data.mongodb: INFO
+

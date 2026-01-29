@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixtures - Tennis Data Adapter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-slate-900/80 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🎾</span>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                    Tennis Data Adapter
+                </h1>
+            </div>
+            <nav class="flex items-center gap-6">
+                <a href="/ui/dashboard" class="text-slate-400 hover:text-slate-200 transition-colors">Dashboard</a>
+                <a href="/ui/fixtures" class="text-emerald-400 font-medium">Fixtures</a>
+                <a href="/ui/players" class="text-slate-400 hover:text-slate-200 transition-colors">Players</a>
+                <a href="/ui/sync" class="text-slate-400 hover:text-slate-200 transition-colors">Sync</a>
+                <a href="/swagger-ui.html" class="text-slate-500 hover:text-slate-300 text-sm transition-colors">API Docs →</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold mb-2">Fixtures</h2>
+            <p class="text-slate-500">Browse and filter match data (defaults to today)</p>
+        </div>
+
+        <!-- Quick Date Filters -->
+        <div class="flex gap-2 mb-4">
+            <a th:href="@{/ui/fixtures}" 
+               class="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors">
+                Today
+            </a>
+            <a th:href="@{/ui/fixtures(dateStart=${#temporals.format(T(java.time.LocalDate).now().minusDays(7), 'yyyy-MM-dd')}, dateStop=${#temporals.format(T(java.time.LocalDate).now(), 'yyyy-MM-dd')})}" 
+               class="px-3 py-1.5 text-sm rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">
+                Last 7 Days
+            </a>
+            <a th:href="@{/ui/fixtures(dateStart=${#temporals.format(T(java.time.LocalDate).now(), 'yyyy-MM-dd')}, dateStop=${#temporals.format(T(java.time.LocalDate).now().plusDays(7), 'yyyy-MM-dd')})}" 
+               class="px-3 py-1.5 text-sm rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">
+                Next 7 Days
+            </a>
+        </div>
+
+        <!-- Filters -->
+        <form method="get" class="bg-slate-900/50 border border-slate-800 rounded-xl p-5 mb-6">
+            <div class="grid md:grid-cols-5 gap-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Start Date</label>
+                    <input type="date" name="dateStart" th:value="${dateStart}"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">End Date</label>
+                    <input type="date" name="dateStop" th:value="${dateStop}"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Tournament</label>
+                    <select name="tournamentKey" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">All Tournaments</option>
+                        <option th:each="t : ${tournaments}" 
+                                th:value="${t.tournamentKey}" 
+                                th:text="${t.tournamentName}"
+                                th:selected="${t.tournamentKey == tournamentKey}">Tournament</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Status</label>
+                    <select name="status" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">All Status</option>
+                        <option value="Finished" th:selected="${status == 'Finished'}">Finished</option>
+                        <option value="Not Started" th:selected="${status == 'Not Started'}">Not Started</option>
+                        <option value="Cancelled" th:selected="${status == 'Cancelled'}">Cancelled</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg px-4 py-2 transition-colors">
+                        🔍 Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Results Count -->
+        <div class="mb-4 text-slate-500 text-sm">
+            Showing <span class="text-slate-300 mono" th:text="${fixtureCount}">0</span> fixtures
+        </div>
+
+        <!-- Fixtures Table -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
+            <div th:if="${#lists.isEmpty(fixtures)}" class="p-12 text-center text-slate-500">
+                <p class="text-4xl mb-3">📭</p>
+                <p>No fixtures found for the selected filters</p>
+            </div>
+            <table th:unless="${#lists.isEmpty(fixtures)}" class="w-full">
+                <thead class="bg-slate-800/50">
+                    <tr class="text-left text-sm text-slate-400">
+                        <th class="px-4 py-3 font-medium">Date</th>
+                        <th class="px-4 py-3 font-medium">Player 1</th>
+                        <th class="px-4 py-3 font-medium"></th>
+                        <th class="px-4 py-3 font-medium">Player 2</th>
+                        <th class="px-4 py-3 font-medium">Score</th>
+                        <th class="px-4 py-3 font-medium">Status</th>
+                        <th class="px-4 py-3 font-medium">Tournament</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/50">
+                    <tr th:each="fixture : ${fixtures}">
+                        <td colspan="8" class="p-0">
+                            <a th:href="@{/ui/match/{id}(id=${fixture.eventKey})}" 
+                               class="flex hover:bg-slate-800/30 transition-colors cursor-pointer group">
+                                <span class="px-4 py-3 text-sm mono text-slate-400 w-28" th:text="${fixture.eventDate}">2026-01-26</span>
+                                <span class="px-4 py-3 flex-1">
+                                    <span th:classappend="${fixture.winner == fixture.firstPlayerKey} ? 'text-emerald-400 font-medium' : ''"
+                                          th:text="${fixture.firstPlayerName}">Player 1</span>
+                                </span>
+                                <span class="px-4 py-3 text-slate-600 text-center w-12">vs</span>
+                                <span class="px-4 py-3 flex-1">
+                                    <span th:classappend="${fixture.winner == fixture.secondPlayerKey} ? 'text-emerald-400 font-medium' : ''"
+                                          th:text="${fixture.secondPlayerName}">Player 2</span>
+                                </span>
+                                <span class="px-4 py-3 mono text-sm w-24 text-center" th:text="${fixture.score ?: '-'}">-</span>
+                                <span class="px-4 py-3 w-24">
+                                    <span th:if="${fixture.status == 'Finished'}" class="text-xs px-2 py-0.5 bg-emerald-400/10 text-emerald-400 rounded">Finished</span>
+                                    <span th:if="${fixture.status == 'Not Started'}" class="text-xs px-2 py-0.5 bg-amber-400/10 text-amber-400 rounded">Scheduled</span>
+                                    <span th:if="${fixture.status != 'Finished' and fixture.status != 'Not Started'}" 
+                                          class="text-xs px-2 py-0.5 bg-slate-700 text-slate-400 rounded" th:text="${fixture.status}">Status</span>
+                                </span>
+                                <span class="px-4 py-3 text-sm text-slate-500 flex-1 truncate">
+                                    <a th:if="${fixture.tournamentKey != null}" 
+                                       th:href="@{/ui/tournament/{key}(key=${fixture.tournamentKey})}"
+                                       class="hover:text-emerald-400 hover:underline"
+                                       onclick="event.stopPropagation();"
+                                       th:text="${fixture.raw != null and fixture.raw.get('tournament_name') != null} ? ${fixture.raw.get('tournament_name')} : ${fixture.tournamentKey}">Tournament</a>
+                                    <span th:unless="${fixture.tournamentKey != null}" class="text-slate-600">-</span>
+                                </span>
+                                <span class="px-4 py-3 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity w-8">
+                                    →
+                                </span>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>
+

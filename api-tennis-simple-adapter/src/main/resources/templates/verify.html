@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Predictions - Tennis Data Adapter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-slate-900/80 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🎾</span>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                    Tennis Data Adapter
+                </h1>
+            </div>
+            <nav class="flex items-center gap-6">
+                <a href="/ui/dashboard" class="text-slate-400 hover:text-slate-200 transition-colors">Dashboard</a>
+                <a href="/ui/fixtures" class="text-slate-400 hover:text-slate-200 transition-colors">Fixtures</a>
+                <a href="/ui/players" class="text-slate-400 hover:text-slate-200 transition-colors">Players</a>
+                <a href="/ui/sync" class="text-slate-400 hover:text-slate-200 transition-colors">Sync</a>
+                <a href="/ui/verify" class="text-emerald-400 font-medium">Verify</a>
+                <a href="/swagger-ui.html" class="text-slate-500 hover:text-slate-300 text-sm transition-colors">API Docs →</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Page Title -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold">📊 Prediction Verification</h2>
+            <p class="text-slate-400 mt-2">Upload a predictions CSV to verify against actual match results</p>
+        </div>
+
+        <!-- Error Message -->
+        <div th:if="${error}" class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400">
+            <span th:text="${error}">Error message</span>
+        </div>
+
+        <!-- Upload Form -->
+        <div th:unless="${hasReport}" class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8">
+            <form method="post" enctype="multipart/form-data" action="/ui/verify">
+                <div class="flex flex-col items-center justify-center gap-4 py-8">
+                    <div class="text-6xl">📤</div>
+                    <div class="text-center">
+                        <p class="font-medium mb-2">Upload Predictions CSV</p>
+                        <p class="text-slate-500 text-sm mb-4">
+                            Export from prediction-api at <span class="mono text-xs bg-slate-800 px-2 py-1 rounded">/ui/predict-all-models/export</span>
+                        </p>
+                    </div>
+                    <div class="flex flex-col items-center gap-4 w-full max-w-md">
+                        <input type="file" name="file" accept=".csv" required
+                               class="block w-full text-sm text-slate-400
+                                      file:mr-4 file:py-2 file:px-4
+                                      file:rounded-lg file:border-0
+                                      file:text-sm file:font-medium
+                                      file:bg-emerald-500/20 file:text-emerald-400
+                                      hover:file:bg-emerald-500/30 cursor-pointer">
+                        
+                        <!-- Fetch from API Option -->
+                        <div class="w-full p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                            <label class="flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" name="fetchFromApi" value="true" checked
+                                       class="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500">
+                                <div>
+                                    <span class="font-medium text-slate-200">🌐 Fetch from API Tennis</span>
+                                    <p class="text-slate-500 text-sm mt-1">
+                                        Automatically fetch latest results from API Tennis for matches not in the database or not yet finished.
+                                        New data will be saved to the database.
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <button type="submit" 
+                                class="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg transition-colors">
+                            🔍 Verify Predictions
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Report Results -->
+        <div th:if="${hasReport}">
+            <!-- Upload Another -->
+            <div class="mb-6 flex justify-between items-center">
+                <a href="/ui/verify" class="text-slate-400 hover:text-slate-200 transition-colors">
+                    ← Upload Another CSV
+                </a>
+            </div>
+
+            <!-- API Fetch Stats Banner -->
+            <div th:if="${report.fetchedFromApi}" class="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🌐</span>
+                    <div>
+                        <span class="font-medium text-blue-400">API Tennis Data Fetched</span>
+                        <p class="text-slate-400 text-sm">
+                            <span th:text="${report.apiFetchAttempts}">0</span> date(s) queried •
+                            <span th:text="${report.apiFetchSuccess}">0</span> fixtures found •
+                            <span th:text="${report.apiFetchSaved}">0</span> saved to database
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-slate-300 mono" th:text="${report.totalPredictions}">0</div>
+                    <div class="text-slate-500 text-xs mt-1">Total Predictions</div>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-cyan-400 mono" th:text="${report.matchesWithResults}">0</div>
+                    <div class="text-slate-500 text-xs mt-1">Matches Verified</div>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-emerald-400 mono" th:text="${report.correct}">0</div>
+                    <div class="text-slate-500 text-xs mt-1">Correct</div>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-red-400 mono" th:text="${report.incorrect}">0</div>
+                    <div class="text-slate-500 text-xs mt-1">Incorrect</div>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-amber-400 mono" th:text="${report.accuracyFormatted}">0%</div>
+                    <div class="text-slate-500 text-xs mt-1">Accuracy</div>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold mono"
+                         th:class="${report.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}"
+                         th:text="${report.profitFormatted}">+0.00</div>
+                    <div class="text-slate-500 text-xs mt-1">Profit (Units)</div>
+                </div>
+            </div>
+
+            <!-- ROI Banner -->
+            <div class="mb-8 p-6 rounded-xl text-center"
+                 th:class="${report.roi >= 0 ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-red-500/10 border border-red-500/30'}">
+                <div class="text-4xl font-bold mono"
+                     th:class="${report.roi >= 0 ? 'text-emerald-400' : 'text-red-400'}"
+                     th:text="${report.roiFormatted}">+0.0%</div>
+                <div class="text-slate-400 text-sm mt-1">Return on Investment</div>
+                <div class="text-slate-500 text-xs mt-2">
+                    Staked: <span class="mono" th:text="${#numbers.formatDecimal(report.totalStaked, 1, 2)}">0</span> units |
+                    Returned: <span class="mono" th:text="${#numbers.formatDecimal(report.totalReturn, 1, 2)}">0</span> units
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="grid lg:grid-cols-2 gap-6 mb-8">
+                <!-- Model Performance -->
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
+                    <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                        <h3 class="font-semibold">🏆 Model Performance</h3>
+                        <span class="text-slate-500 text-xs">Sorted by ROI</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-800/50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-slate-400 font-medium">Model</th>
+                                    <th class="px-4 py-3 text-center text-slate-400 font-medium">Bets</th>
+                                    <th class="px-4 py-3 text-center text-slate-400 font-medium">W/L</th>
+                                    <th class="px-4 py-3 text-center text-slate-400 font-medium">Acc</th>
+                                    <th class="px-4 py-3 text-right text-slate-400 font-medium">P/L</th>
+                                    <th class="px-4 py-3 text-right text-slate-400 font-medium">ROI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="ms : ${report.modelStats}" 
+                                    class="border-b border-slate-800/50 hover:bg-slate-800/30">
+                                    <td class="px-4 py-3">
+                                        <span th:text="${ms.modelName}" class="font-medium">Model</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center mono text-slate-400" th:text="${ms.bets}">0</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="text-emerald-400" th:text="${ms.wins}">0</span>
+                                        <span class="text-slate-600">/</span>
+                                        <span class="text-red-400" th:text="${ms.losses}">0</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center mono" th:text="${ms.accuracyFormatted}">0%</td>
+                                    <td class="px-4 py-3 text-right mono"
+                                        th:class="${ms.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}"
+                                        th:text="${ms.profitFormatted}">+0.00</td>
+                                    <td class="px-4 py-3 text-right mono font-medium"
+                                        th:class="${ms.roi >= 0 ? 'text-emerald-400' : 'text-red-400'}"
+                                        th:text="${ms.roiFormatted}">+0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Odds Range Performance (Aggregate) -->
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
+                    <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                        <h3 class="font-semibold">📈 Performance by Odds Range (All Models)</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-800/50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-slate-400 font-medium">Odds Range</th>
+                                    <th class="px-4 py-3 text-center text-slate-400 font-medium">Bets</th>
+                                    <th class="px-4 py-3 text-center text-slate-400 font-medium">W/L</th>
+                                    <th class="px-4 py-3 text-center text-slate-400 font-medium">Acc</th>
+                                    <th class="px-4 py-3 text-right text-slate-400 font-medium">P/L</th>
+                                    <th class="px-4 py-3 text-right text-slate-400 font-medium">ROI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="os : ${report.oddsRangeStats}" 
+                                    class="border-b border-slate-800/50 hover:bg-slate-800/30">
+                                    <td class="px-4 py-3">
+                                        <span th:text="${os.range}" class="font-medium mono">Range</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center mono text-slate-400" th:text="${os.bets}">0</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="text-emerald-400" th:text="${os.wins}">0</span>
+                                        <span class="text-slate-600">/</span>
+                                        <span class="text-red-400" th:text="${os.losses}">0</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center mono" th:text="${os.accuracyFormatted}">0%</td>
+                                    <td class="px-4 py-3 text-right mono"
+                                        th:class="${os.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}"
+                                        th:text="${os.profitFormatted}">+0.00</td>
+                                    <td class="px-4 py-3 text-right mono font-medium"
+                                        th:class="${os.roi >= 0 ? 'text-emerald-400' : 'text-red-400'}"
+                                        th:text="${os.roiFormatted}">+0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Odds Range Performance By Model -->
+                <div th:if="${!#lists.isEmpty(report.oddsRangeStatsByModel)}" class="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
+                    <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                        <h3 class="font-semibold">📊 Performance by Odds Range (By Model)</h3>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        <div th:each="mors : ${report.oddsRangeStatsByModel}" class="bg-slate-800/30 rounded-lg overflow-hidden">
+                            <div class="px-4 py-2 bg-slate-800/50 border-b border-slate-700/50 flex items-center gap-2">
+                                <span class="text-purple-400 font-medium" th:text="${mors.modelName}">Model Name</span>
+                                <span class="text-slate-500 text-xs mono" th:text="'(' + ${mors.modelId} + ')'">id</span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-slate-800/30">
+                                        <tr>
+                                            <th class="px-4 py-2 text-left text-slate-400 font-medium text-xs">Range</th>
+                                            <th class="px-4 py-2 text-center text-slate-400 font-medium text-xs">Bets</th>
+                                            <th class="px-4 py-2 text-center text-slate-400 font-medium text-xs">W/L</th>
+                                            <th class="px-4 py-2 text-center text-slate-400 font-medium text-xs">Acc</th>
+                                            <th class="px-4 py-2 text-right text-slate-400 font-medium text-xs">P/L</th>
+                                            <th class="px-4 py-2 text-right text-slate-400 font-medium text-xs">ROI</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="rs : ${mors.rangeStats}" 
+                                            class="border-b border-slate-700/30 hover:bg-slate-700/30"
+                                            th:classappend="${rs.bets == 0} ? 'opacity-40' : ''">
+                                            <td class="px-4 py-2">
+                                                <span th:text="${rs.range}" class="font-medium mono text-xs">Range</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-center mono text-slate-400 text-xs" th:text="${rs.bets}">0</td>
+                                            <td class="px-4 py-2 text-center text-xs">
+                                                <span class="text-emerald-400" th:text="${rs.wins}">0</span>
+                                                <span class="text-slate-600">/</span>
+                                                <span class="text-red-400" th:text="${rs.losses}">0</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-center mono text-xs" th:text="${rs.accuracyFormatted}">0%</td>
+                                            <td class="px-4 py-2 text-right mono text-xs"
+                                                th:class="${rs.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}"
+                                                th:text="${rs.profitFormatted}">+0.00</td>
+                                            <td class="px-4 py-2 text-right mono font-medium text-xs"
+                                                th:class="${rs.roi >= 0 ? 'text-emerald-400' : 'text-red-400'}"
+                                                th:text="${rs.roiFormatted}">+0%</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Best Model Highlight -->
+            <div th:if="${report.bestModel != null}" class="mb-8 p-6 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-2xl">🏅</span>
+                            <h3 class="font-semibold text-lg">Best Performing Model</h3>
+                        </div>
+                        <p class="text-xl font-bold text-amber-400" th:text="${report.bestModel.modelName}">Model Name</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold mono"
+                             th:class="${report.bestModel.roi >= 0 ? 'text-emerald-400' : 'text-red-400'}"
+                             th:text="${report.bestModel.roiFormatted}">+0%</div>
+                        <div class="text-slate-400 text-sm">ROI</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Results -->
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                    <h3 class="font-semibold">📋 Detailed Results</h3>
+                    <span class="text-slate-500 text-sm mono" th:text="${#lists.size(report.verifiedPredictions)} + ' predictions'">0 predictions</span>
+                </div>
+                <div class="overflow-x-auto max-h-[600px]">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-800/50 sticky top-0">
+                            <tr>
+                                <th class="px-3 py-3 text-left text-slate-400 font-medium">Date</th>
+                                <th class="px-3 py-3 text-left text-slate-400 font-medium">Match</th>
+                                <th class="px-3 py-3 text-left text-slate-400 font-medium">Model</th>
+                                <th class="px-3 py-3 text-left text-slate-400 font-medium">Predicted</th>
+                                <th class="px-3 py-3 text-center text-slate-400 font-medium">Odds</th>
+                                <th class="px-3 py-3 text-left text-slate-400 font-medium">Actual</th>
+                                <th class="px-3 py-3 text-center text-slate-400 font-medium">Status</th>
+                                <th class="px-3 py-3 text-right text-slate-400 font-medium">P/L</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="vp : ${report.verifiedPredictions}" 
+                                class="border-b border-slate-800/50 hover:bg-slate-800/30">
+                                <td class="px-3 py-2 mono text-xs text-slate-400" th:text="${vp.prediction.matchDate}">2026-01-28</td>
+                                <td class="px-3 py-2">
+                                    <div class="max-w-[200px] truncate">
+                                        <span th:text="${vp.prediction.player1Name}" class="text-slate-300">P1</span>
+                                        <span class="text-slate-600 mx-1">vs</span>
+                                        <span th:text="${vp.prediction.player2Name}" class="text-slate-300">P2</span>
+                                    </div>
+                                </td>
+                                <td class="px-3 py-2 text-slate-400 truncate max-w-[120px]" th:text="${vp.prediction.modelName}">Model</td>
+                                <td class="px-3 py-2">
+                                    <span th:text="${vp.prediction.predictedWinnerName}" class="font-medium">Winner</span>
+                                </td>
+                                <td class="px-3 py-2 text-center mono text-sm">
+                                    <span th:if="${vp.prediction.predictedWinnerOdds != null}" 
+                                          th:text="${#numbers.formatDecimal(vp.prediction.predictedWinnerOdds, 1, 2)}"
+                                          class="text-amber-400">1.50</span>
+                                    <span th:unless="${vp.prediction.predictedWinnerOdds != null}" class="text-slate-600">-</span>
+                                </td>
+                                <td class="px-3 py-2">
+                                    <span th:if="${vp.actualWinnerName != null}" th:text="${vp.actualWinnerName}" class="font-medium">Winner</span>
+                                    <span th:if="${vp.actualScore != null}" class="text-slate-500 text-xs ml-1" th:text="'(' + ${vp.actualScore} + ')'"></span>
+                                    <span th:unless="${vp.actualWinnerName != null}" class="text-slate-500">-</span>
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    <span th:if="${vp.status == 'CORRECT'}" class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded text-xs">✓ Correct</span>
+                                    <span th:if="${vp.status == 'INCORRECT'}" class="px-2 py-0.5 bg-red-500/20 text-red-400 rounded text-xs">✗ Wrong</span>
+                                    <span th:if="${vp.status == 'NOT_FINISHED'}" class="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded text-xs">⏳ Pending</span>
+                                    <span th:if="${vp.status == 'NOT_FOUND'}" class="px-2 py-0.5 bg-slate-500/20 text-slate-400 rounded text-xs">? Not Found</span>
+                                </td>
+                                <td class="px-3 py-2 text-right mono"
+                                    th:class="${vp.profit != null and vp.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}"
+                                    th:text="${vp.profitFormatted}">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Info -->
+            <div class="mt-8 p-4 bg-slate-900/30 border border-slate-800 rounded-xl text-slate-500 text-sm">
+                <p class="mb-2">
+                    <strong class="text-slate-400">ℹ️ About this report:</strong>
+                </p>
+                <ul class="list-disc list-inside space-y-1">
+                    <li><strong>NOT_FOUND:</strong> Match not in database. Sync more data to verify.</li>
+                    <li><strong>NOT_FINISHED:</strong> Match hasn't been played yet. Check back later.</li>
+                    <li><strong>Profit/Loss:</strong> Calculated as if betting 1 unit on each prediction.</li>
+                    <li><strong>ROI:</strong> (Profit / Total Staked) × 100%</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+

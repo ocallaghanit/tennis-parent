@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${tournament.tournamentName + ' - Tennis Data'}">Tournament Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+        .mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <!-- Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🎾</span>
+                <h1 class="text-xl font-bold text-emerald-400">Tennis Data Adapter</h1>
+            </div>
+            <nav class="flex gap-6 text-sm">
+                <a href="/ui/dashboard" class="text-slate-400 hover:text-emerald-400 transition-colors">Dashboard</a>
+                <a href="/ui/fixtures" class="text-slate-400 hover:text-emerald-400 transition-colors">Fixtures</a>
+                <a href="/ui/players" class="text-slate-400 hover:text-emerald-400 transition-colors">Players</a>
+                <a href="/ui/compare" class="text-slate-400 hover:text-emerald-400 transition-colors">Compare</a>
+                <a href="/ui/sync" class="text-slate-400 hover:text-emerald-400 transition-colors">Sync</a>
+                <a href="/swagger-ui.html" class="text-slate-500 hover:text-slate-300 transition-colors">API Docs →</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Back link -->
+        <a href="/ui/fixtures" class="inline-flex items-center gap-2 text-slate-400 hover:text-emerald-400 mb-6 transition-colors">
+            ← Back to Fixtures
+        </a>
+
+        <!-- Tournament Header -->
+        <div class="bg-gradient-to-br from-emerald-900/30 to-slate-800 border border-emerald-800/50 rounded-2xl p-8 mb-8">
+            <div class="flex flex-col md:flex-row items-start justify-between gap-6">
+                <div>
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="text-4xl">🏆</span>
+                        <h2 class="text-3xl font-bold text-white" th:text="${tournament.tournamentName}">Tournament Name</h2>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-3 mb-4">
+                        <span th:if="${tournamentCountry}" class="px-3 py-1 bg-slate-700 rounded-full text-sm">
+                            🌍 <span th:text="${tournamentCountry}">Country</span>
+                        </span>
+                        <span th:if="${tournament.surface}" class="px-3 py-1 rounded-full text-sm"
+                              th:classappend="${tournament.surface == 'Hard'} ? 'bg-blue-900/50 text-blue-400' : 
+                                             (${tournament.surface == 'Clay'} ? 'bg-orange-900/50 text-orange-400' : 
+                                             (${tournament.surface == 'Grass'} ? 'bg-green-900/50 text-green-400' : 'bg-slate-700'))">
+                            🎾 <span th:text="${tournament.surface}">Surface</span>
+                        </span>
+                        <span th:if="${tournament.eventTypeKey}" class="px-3 py-1 bg-purple-900/50 text-purple-400 rounded-full text-sm">
+                            📋 <span th:text="${tournament.eventTypeKey}">Event Type</span>
+                        </span>
+                    </div>
+                    
+                    <div th:if="${tournamentStartDate != null || tournamentEndDate != null}" class="text-slate-400 text-sm">
+                        📅 
+                        <span th:if="${tournamentStartDate}" th:text="${tournamentStartDate}">Start</span>
+                        <span th:if="${tournamentStartDate != null && tournamentEndDate != null}"> - </span>
+                        <span th:if="${tournamentEndDate}" th:text="${tournamentEndDate}">End</span>
+                    </div>
+                </div>
+                
+                <!-- Stats -->
+                <div class="flex gap-6 text-center">
+                    <div class="bg-slate-800/50 rounded-xl p-4 min-w-[100px]">
+                        <div class="text-3xl font-bold text-emerald-400" th:text="${totalFixtures}">0</div>
+                        <div class="text-xs text-slate-500 uppercase">Matches</div>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-xl p-4 min-w-[100px]">
+                        <div class="text-3xl font-bold text-blue-400" th:text="${playerCount}">0</div>
+                        <div class="text-xs text-slate-500 uppercase">Players</div>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-xl p-4 min-w-[100px]">
+                        <div class="text-3xl font-bold text-orange-400" th:text="${completedFixtures.size()}">0</div>
+                        <div class="text-xs text-slate-500 uppercase">Completed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tournament Details -->
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span>📋</span> Tournament Details
+                </h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Tournament Key</span>
+                        <span class="text-white mono" th:text="${tournament.tournamentKey}">Key</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Name</span>
+                        <span class="text-white" th:text="${tournament.tournamentName}">Name</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Surface</span>
+                        <span class="text-white" th:text="${tournament.surface ?: '-'}">Surface</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Country</span>
+                        <span class="text-white" th:text="${tournamentCountry ?: '-'}">Country</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Event Type</span>
+                        <span class="text-white" th:text="${tournament.eventTypeKey ?: '-'}">Type</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Last Updated</span>
+                        <span class="text-slate-500 text-xs" th:text="${tournament.updatedAt}">timestamp</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Matches -->
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span>📅</span> Upcoming Matches
+                    <span class="text-slate-500 text-sm font-normal" th:text="'(' + ${upcomingFixtures.size()} + ')'"></span>
+                </h3>
+                
+                <div th:if="${upcomingFixtures.isEmpty()}" class="text-center py-8 text-slate-500">
+                    <p class="text-3xl mb-2">✅</p>
+                    <p>No upcoming matches</p>
+                </div>
+                
+                <div th:unless="${upcomingFixtures.isEmpty()}" class="space-y-2 max-h-80 overflow-y-auto">
+                    <a th:each="match : ${upcomingFixtures}" 
+                       th:href="@{/ui/match/{id}(id=${match.eventKey})}"
+                       class="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <span class="text-white" th:text="${match.firstPlayerName}">Player 1</span>
+                                <span class="text-slate-500 mx-2">vs</span>
+                                <span class="text-white" th:text="${match.secondPlayerName}">Player 2</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-slate-400 text-sm mono" th:text="${match.eventDate}">Date</span>
+                                <span class="px-2 py-0.5 bg-blue-900/50 text-blue-400 rounded text-xs" th:text="${match.status}">Status</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Matches -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span>📊</span> Completed Matches
+                <span class="text-slate-500 text-sm font-normal" th:text="'(' + ${completedFixtures.size()} + ')'"></span>
+            </h3>
+            
+            <div th:if="${completedFixtures.isEmpty()}" class="text-center py-8 text-slate-500">
+                <p class="text-3xl mb-2">📭</p>
+                <p>No completed matches yet</p>
+            </div>
+            
+            <div th:unless="${completedFixtures.isEmpty()}" class="space-y-2">
+                <a th:each="match : ${completedFixtures}" 
+                   th:href="@{/ui/match/{id}(id=${match.eventKey})}"
+                   class="flex items-center justify-between p-4 rounded-lg hover:bg-slate-800/50 transition-colors group">
+                    <div class="flex items-center gap-4">
+                        <!-- Date -->
+                        <span class="text-slate-400 text-sm mono w-24" th:text="${match.eventDate}">Date</span>
+                        
+                        <!-- Players -->
+                        <div class="flex items-center gap-2">
+                            <span th:classappend="${match.winner == match.firstPlayerKey 
+                                                    || (match.winner == 'First Player')} ? 'text-emerald-400 font-semibold' : 'text-slate-400'"
+                                  th:text="${match.firstPlayerName}">Player 1</span>
+                            <span class="text-slate-600">vs</span>
+                            <span th:classappend="${match.winner == match.secondPlayerKey 
+                                                    || (match.winner == 'Second Player')} ? 'text-emerald-400 font-semibold' : 'text-slate-400'"
+                                  th:text="${match.secondPlayerName}">Player 2</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        <!-- Score -->
+                        <span class="mono text-sm" th:text="${match.score ?: '-'}">Score</span>
+                        <span class="text-slate-600 group-hover:text-emerald-400 transition-colors">→</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Raw Data (collapsible) -->
+        <details class="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
+            <summary class="p-6 cursor-pointer hover:bg-slate-800/50 transition-colors">
+                <span class="text-lg font-semibold">🔧 Raw API Data</span>
+                <span class="text-slate-500 text-sm ml-2">(click to expand)</span>
+            </summary>
+            <div class="p-6 pt-0 border-t border-slate-800">
+                <pre class="bg-slate-950 rounded-lg p-4 overflow-x-auto text-xs mono text-slate-400" 
+                     th:text="${rawJson ?: 'No raw data'}">Raw JSON</pre>
+            </div>
+        </details>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 mt-12 py-6 text-center text-slate-600 text-sm">
+        Tennis Data Adapter • Powered by API Tennis
+    </footer>
+</body>
+</html>
+

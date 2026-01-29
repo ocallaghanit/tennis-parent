@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OWL Trends - Momentum & Form Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Sparkline styles */
+        .sparkline {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 1px;
+            height: 24px;
+        }
+        .sparkline .bar {
+            width: 3px;
+            border-radius: 1px;
+            transition: height 0.3s ease;
+        }
+        
+        /* Momentum glow effects */
+        .glow-hot { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+        .glow-cold { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+        .glow-rising { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+        
+        /* Animation for hot players */
+        @keyframes pulse-hot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-hot { animation: pulse-hot 2s ease-in-out infinite; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 text-slate-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-slate-900/80 border-b border-indigo-800/50 sticky top-0 z-50 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">📊</span>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                    OWL Trends & Momentum
+                </h1>
+            </div>
+            <nav class="flex items-center gap-6">
+                <a href="/ui/dashboard" class="text-slate-400 hover:text-slate-200 transition-colors">Dashboard</a>
+                <a href="/ui/owl" class="text-slate-400 hover:text-slate-200 transition-colors">Leaderboard</a>
+                <a href="/ui/owl/trends" class="text-amber-400 font-medium">Trends</a>
+                <a href="/ui/owl/admin" class="text-slate-400 hover:text-slate-200 transition-colors">Admin</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Title -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold mb-2">📈 Player Momentum & Consistency</h2>
+            <p class="text-slate-500">Track who's on fire, who's slumping, and who's the most reliable</p>
+        </div>
+
+        <!-- Trend Distribution Stats -->
+        <div th:if="${trendStats}" class="grid grid-cols-2 md:grid-cols-6 gap-3 mb-8">
+            <div class="bg-slate-900/50 border border-red-800/30 rounded-xl p-4 text-center glow-hot">
+                <div class="text-3xl mb-1">🔥</div>
+                <div class="text-2xl font-bold text-red-400 mono" th:text="${trendStats.hotCount}">0</div>
+                <div class="text-slate-400 text-xs mt-1">Hot</div>
+            </div>
+            <div class="bg-slate-900/50 border border-green-800/30 rounded-xl p-4 text-center glow-rising">
+                <div class="text-3xl mb-1">📈</div>
+                <div class="text-2xl font-bold text-green-400 mono" th:text="${trendStats.risingCount}">0</div>
+                <div class="text-slate-400 text-xs mt-1">Rising</div>
+            </div>
+            <div class="bg-slate-900/50 border border-slate-700/30 rounded-xl p-4 text-center">
+                <div class="text-3xl mb-1">➡️</div>
+                <div class="text-2xl font-bold text-slate-400 mono" th:text="${trendStats.stableCount}">0</div>
+                <div class="text-slate-400 text-xs mt-1">Stable</div>
+            </div>
+            <div class="bg-slate-900/50 border border-yellow-800/30 rounded-xl p-4 text-center">
+                <div class="text-3xl mb-1">📉</div>
+                <div class="text-2xl font-bold text-yellow-400 mono" th:text="${trendStats.coolingCount}">0</div>
+                <div class="text-slate-400 text-xs mt-1">Cooling</div>
+            </div>
+            <div class="bg-slate-900/50 border border-blue-800/30 rounded-xl p-4 text-center glow-cold">
+                <div class="text-3xl mb-1">🧊</div>
+                <div class="text-2xl font-bold text-blue-400 mono" th:text="${trendStats.coldCount}">0</div>
+                <div class="text-slate-400 text-xs mt-1">Cold</div>
+            </div>
+            <div class="bg-slate-900/50 border border-indigo-800/30 rounded-xl p-4 text-center">
+                <div class="text-2xl mb-1">⚡</div>
+                <div class="text-xl font-bold text-cyan-400 mono" th:text="${trendStats.avgMomentumFormatted}">0</div>
+                <div class="text-slate-400 text-xs mt-1">Avg Momentum</div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid lg:grid-cols-2 gap-6">
+            <!-- HOTTEST PLAYERS -->
+            <div class="bg-slate-900/50 border border-red-800/30 rounded-xl overflow-hidden glow-hot">
+                <div class="bg-gradient-to-r from-red-900/50 to-orange-900/30 px-4 py-3 border-b border-red-800/30">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        <span class="animate-hot">🔥</span> Hottest Players
+                    </h3>
+                    <p class="text-red-400/70 text-sm">Players gaining momentum rapidly</p>
+                </div>
+                <div class="divide-y divide-red-900/30">
+                    <div th:each="player : ${hottestPlayers}" 
+                         class="px-4 py-3 flex items-center justify-between hover:bg-red-900/20 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg" th:text="${player.momentumEmoji}">🔥</span>
+                            <div>
+                                <a th:href="@{/ui/owl/player/{key}(key=${player.playerKey})}"
+                                   class="font-medium hover:text-red-400 transition-colors"
+                                   th:text="${player.playerName}">Player</a>
+                                <div class="text-xs text-slate-500">
+                                    ATP <span th:text="${player.atpRank != null ? player.atpRank : '-'}">-</span>
+                                    • OWL <span th:text="${player.ratingFormatted}">1500</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold mono text-green-400" th:text="${player.momentumScoreFormatted}">+0</div>
+                            <div class="text-xs text-slate-500" th:text="${player.consistencyLabel}">Steady</div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(hottestPlayers)}" class="px-4 py-8 text-center text-slate-500">
+                        No hot players found
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLDEST PLAYERS -->
+            <div class="bg-slate-900/50 border border-blue-800/30 rounded-xl overflow-hidden glow-cold">
+                <div class="bg-gradient-to-r from-blue-900/50 to-cyan-900/30 px-4 py-3 border-b border-blue-800/30">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        🧊 Coldest Players
+                    </h3>
+                    <p class="text-blue-400/70 text-sm">Players in a slump</p>
+                </div>
+                <div class="divide-y divide-blue-900/30">
+                    <div th:each="player : ${coldestPlayers}" 
+                         class="px-4 py-3 flex items-center justify-between hover:bg-blue-900/20 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg" th:text="${player.momentumEmoji}">🧊</span>
+                            <div>
+                                <a th:href="@{/ui/owl/player/{key}(key=${player.playerKey})}"
+                                   class="font-medium hover:text-blue-400 transition-colors"
+                                   th:text="${player.playerName}">Player</a>
+                                <div class="text-xs text-slate-500">
+                                    ATP <span th:text="${player.atpRank != null ? player.atpRank : '-'}">-</span>
+                                    • OWL <span th:text="${player.ratingFormatted}">1500</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold mono text-red-400" th:text="${player.momentumScoreFormatted}">-0</div>
+                            <div class="text-xs text-slate-500" th:text="${player.consistencyLabel}">Steady</div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(coldestPlayers)}" class="px-4 py-8 text-center text-slate-500">
+                        No cold players found
+                    </div>
+                </div>
+            </div>
+
+            <!-- MOST CONSISTENT -->
+            <div class="bg-slate-900/50 border border-emerald-800/30 rounded-xl overflow-hidden">
+                <div class="bg-gradient-to-r from-emerald-900/50 to-teal-900/30 px-4 py-3 border-b border-emerald-800/30">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        🎯 Most Consistent
+                    </h3>
+                    <p class="text-emerald-400/70 text-sm">Predictable performers - reliable picks</p>
+                </div>
+                <div class="divide-y divide-emerald-900/30">
+                    <div th:each="player : ${consistentPlayers}" 
+                         class="px-4 py-3 flex items-center justify-between hover:bg-emerald-900/20 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg" th:text="${player.consistencyEmoji}">🎯</span>
+                            <div>
+                                <a th:href="@{/ui/owl/player/{key}(key=${player.playerKey})}"
+                                   class="font-medium hover:text-emerald-400 transition-colors"
+                                   th:text="${player.playerName}">Player</a>
+                                <div class="text-xs text-slate-500">
+                                    W-L: <span th:text="${player.winLossRecord}">0-0</span>
+                                    • <span th:text="${player.winRateFormatted}">50%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-medium text-emerald-400" th:text="${player.consistencyLabel}">Rock Solid</div>
+                            <div class="text-xs text-slate-500 mono">σ = <span th:text="${#numbers.formatDecimal(player.consistencyScore, 0, 1)}">0</span></div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(consistentPlayers)}" class="px-4 py-8 text-center text-slate-500">
+                        Not enough data
+                    </div>
+                </div>
+            </div>
+
+            <!-- MOST VOLATILE / WILD CARDS -->
+            <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-900/50 to-pink-900/30 px-4 py-3 border-b border-purple-800/30">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        🌪️ Wild Cards
+                    </h3>
+                    <p class="text-purple-400/70 text-sm">Volatile players - upset potential</p>
+                </div>
+                <div class="divide-y divide-purple-900/30">
+                    <div th:each="player : ${volatilePlayers}" 
+                         class="px-4 py-3 flex items-center justify-between hover:bg-purple-900/20 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg" th:text="${player.consistencyEmoji}">🌪️</span>
+                            <div>
+                                <a th:href="@{/ui/owl/player/{key}(key=${player.playerKey})}"
+                                   class="font-medium hover:text-purple-400 transition-colors"
+                                   th:text="${player.playerName}">Player</a>
+                                <div class="text-xs text-slate-500">
+                                    W-L: <span th:text="${player.winLossRecord}">0-0</span>
+                                    • <span th:text="${player.winRateFormatted}">50%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-medium text-purple-400" th:text="${player.consistencyLabel}">Wild Card</div>
+                            <div class="text-xs text-slate-500 mono">σ = <span th:text="${#numbers.formatDecimal(player.consistencyScore, 0, 1)}">0</span></div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(volatilePlayers)}" class="px-4 py-8 text-center text-slate-500">
+                        Not enough data
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RISING STARS Section -->
+        <div class="mt-8 bg-slate-900/50 border border-amber-800/30 rounded-xl overflow-hidden">
+            <div class="bg-gradient-to-r from-amber-900/50 to-yellow-900/30 px-4 py-3 border-b border-amber-800/30">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    ⭐ Rising Stars
+                </h3>
+                <p class="text-amber-400/70 text-sm">Lower-ranked players with strong momentum - potential breakout candidates</p>
+            </div>
+            <div class="p-4">
+                <div th:if="${#lists.isEmpty(risingStars)}" class="text-center text-slate-500 py-4">
+                    No rising stars detected (players ranked 100+ with positive momentum)
+                </div>
+                <div th:unless="${#lists.isEmpty(risingStars)}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div th:each="player : ${risingStars}" 
+                         class="bg-slate-800/50 rounded-lg p-4 hover:bg-slate-800/70 transition-colors border border-amber-900/30">
+                        <div class="flex items-center justify-between mb-2">
+                            <a th:href="@{/ui/owl/player/{key}(key=${player.playerKey})}"
+                               class="font-semibold hover:text-amber-400 transition-colors"
+                               th:text="${player.playerName}">Player</a>
+                            <span class="text-lg" th:text="${player.momentumEmoji}">📈</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                            <div>
+                                <div class="text-slate-400 text-xs">ATP</div>
+                                <div class="font-medium mono" th:text="${player.atpRank != null ? player.atpRank : '-'}">-</div>
+                            </div>
+                            <div>
+                                <div class="text-slate-400 text-xs">OWL</div>
+                                <div class="font-medium mono text-amber-400" th:text="${player.ratingFormatted}">1500</div>
+                            </div>
+                            <div>
+                                <div class="text-slate-400 text-xs">Momentum</div>
+                                <div class="font-medium mono text-green-400" th:text="${player.momentumScoreFormatted}">+0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend / How to Read -->
+        <div class="mt-8 bg-slate-900/50 border border-indigo-800/30 rounded-xl p-6">
+            <h3 class="text-xl font-semibold mb-4">📖 Understanding the Metrics</h3>
+            <div class="grid md:grid-cols-2 gap-6 text-slate-400 text-sm">
+                <div>
+                    <h4 class="font-medium text-slate-200 mb-2">Momentum Score</h4>
+                    <p class="mb-2">Sum of rating changes from the last 7 matches:</p>
+                    <ul class="space-y-1">
+                        <li><span class="text-red-400">🔥 Hot:</span> +30 or more points</li>
+                        <li><span class="text-green-400">📈 Rising:</span> +10 to +30 points</li>
+                        <li><span class="text-slate-400">➡️ Stable:</span> -10 to +10 points</li>
+                        <li><span class="text-yellow-400">📉 Cooling:</span> -10 to -30 points</li>
+                        <li><span class="text-blue-400">🧊 Cold:</span> -30 or fewer points</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium text-slate-200 mb-2">Consistency Score (σ)</h4>
+                    <p class="mb-2">Standard deviation of rating changes (lower = more predictable):</p>
+                    <ul class="space-y-1">
+                        <li><span class="text-emerald-400">🎯 Rock Solid:</span> σ &lt; 8</li>
+                        <li><span class="text-cyan-400">⚖️ Steady:</span> σ 8-15</li>
+                        <li><span class="text-amber-400">🎲 Volatile:</span> σ 15-25</li>
+                        <li><span class="text-purple-400">🌪️ Wild Card:</span> σ &gt; 25</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+
