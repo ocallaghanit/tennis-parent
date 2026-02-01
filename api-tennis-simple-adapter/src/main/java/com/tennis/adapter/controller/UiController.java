@@ -171,8 +171,19 @@ public class UiController {
 
         // Filter by status if provided
         if (status != null && !status.isBlank()) {
+            final String statusFilter = status.trim();
             fixtures = fixtures.stream()
-                    .filter(f -> status.equalsIgnoreCase(f.getStatus()))
+                    .filter(f -> {
+                        String fixtureStatus = f.getStatus();
+                        // "Not Started" should also match null/empty status (future matches)
+                        if ("Not Started".equalsIgnoreCase(statusFilter)) {
+                            return fixtureStatus == null 
+                                || fixtureStatus.isBlank() 
+                                || "Not Started".equalsIgnoreCase(fixtureStatus);
+                        }
+                        // For other statuses, do exact match
+                        return statusFilter.equalsIgnoreCase(fixtureStatus);
+                    })
                     .collect(Collectors.toList());
         }
 

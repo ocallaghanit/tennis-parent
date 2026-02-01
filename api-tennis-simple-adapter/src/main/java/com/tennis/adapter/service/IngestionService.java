@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Service for ingesting data from API Tennis and storing in MongoDB.
@@ -598,14 +599,12 @@ public class IngestionService {
             int skippedCount = 0;
             if (!force) {
                 Instant ttlThreshold = Instant.now().minus(PLAYER_TTL_DAYS, ChronoUnit.DAYS);
-                List<PlayerDocument> existingPlayers = playerRepository.findAll();
-                Set<String> upToDateKeys = new HashSet<>();
                 
-                for (PlayerDocument player : existingPlayers) {
-                    if (player.getFetchedAt() != null && player.getFetchedAt().isAfter(ttlThreshold)) {
-                        upToDateKeys.add(player.getPlayerKey());
-                    }
-                }
+                // Use lightweight projection query - only fetch playerKey field
+                List<PlayerDocument> upToDatePlayers = playerRepository.findPlayerKeysByFetchedAtAfter(ttlThreshold);
+                Set<String> upToDateKeys = upToDatePlayers.stream()
+                        .map(PlayerDocument::getPlayerKey)
+                        .collect(Collectors.toSet());
                 
                 // Remove up-to-date players from fetch list
                 playerKeys.removeAll(upToDateKeys);

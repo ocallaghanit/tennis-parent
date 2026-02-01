@@ -65,5 +65,18 @@ public interface PlayerRepository extends MongoRepository<PlayerDocument, String
      * Find players with non-null rank, sorted by rank
      */
     Page<PlayerDocument> findByCurrentRankNotNull(Pageable pageable);
+
+    /**
+     * Find players fetched after a certain time.
+     * Used to check which players are up-to-date without loading full documents.
+     */
+    @Query(value = "{ 'fetchedAt': { $gt: ?0 } }", fields = "{ 'playerKey': 1 }")
+    List<PlayerDocument> findPlayerKeysByFetchedAtAfter(Instant threshold);
+    
+    /**
+     * Get all player keys (lightweight query without raw data)
+     */
+    @Query(value = "{}", fields = "{ 'playerKey': 1 }")
+    List<PlayerDocument> findAllPlayerKeysOnly();
 }
 
