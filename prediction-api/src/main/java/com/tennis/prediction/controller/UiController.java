@@ -24,11 +24,16 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller
 @RequestMapping("/ui")
@@ -891,23 +896,58 @@ public class UiController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) Double minOdds,
+            @RequestParam(required = false) Double maxOdds,
             Model model
     ) {
-        // Convert minOdds of 0 or 1.0 to null (no filter)
+        // Convert odds of 0 or 1.0 to null (no filter)
         Double effectiveMinOdds = (minOdds == null || minOdds <= 1.0) ? null : minOdds;
+        Double effectiveMaxOdds = (maxOdds == null || maxOdds <= 1.0) ? null : maxOdds;
         
-        BacktestService.BacktestResult result = backtestService.runBacktest(modelId, startDate, endDate, effectiveMinOdds);
+        BacktestService.BacktestResult result = backtestService.runBacktest(modelId, startDate, endDate, effectiveMinOdds, effectiveMaxOdds);
         model.addAttribute("result", result);
         model.addAttribute("selectedModel", modelId);
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
         model.addAttribute("minOdds", minOdds);
+        model.addAttribute("maxOdds", maxOdds);
 
         // Get confidence analysis
         Map<String, BacktestService.ConfidenceBucket> confidenceAnalysis = backtestService.analyzeByConfidence(modelId);
         model.addAttribute("confidenceAnalysis", confidenceAnalysis);
 
         model.addAttribute("models", modelService.getAllModels());
+        return "backtest";
+    }
+
+    @PostMapping("/backtest-all")
+    public String runBacktestAllModels(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Double minOdds,
+            @RequestParam(required = false) Double maxOdds,
+            Model model
+    ) {
+        // Convert odds of 0 or 1.0 to null (no filter)
+        Double effectiveMinOdds = (minOdds == null || minOdds <= 1.0) ? null : minOdds;
+        Double effectiveMaxOdds = (maxOdds == null || maxOdds <= 1.0) ? null : maxOdds;
+        
+        // Get all model IDs
+        List<String> modelIds = modelService.getAllModels().stream()
+                .map(m -> m.getModelId())
+                .collect(java.util.stream.Collectors.toList());
+        
+        // Run backtests for all models
+        Map<String, BacktestService.BacktestResult> comparisonResults = 
+                backtestService.compareModels(modelIds, startDate, endDate, effectiveMinOdds, effectiveMaxOdds);
+        
+        model.addAttribute("comparisonResults", comparisonResults);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("minOdds", minOdds);
+        model.addAttribute("maxOdds", maxOdds);
+        model.addAttribute("compareMode", true);
+        model.addAttribute("models", modelService.getAllModels());
+        
         return "backtest";
     }
 
@@ -1175,6 +1215,385 @@ public class UiController {
         result.put("tooltips", tooltips);
         
         return result;
+    }
+
+    // =============== CSV VALIDATION (READ-ONLY) ===============
+
+    /**
+     * CSV Validation page - validate predictions without saving to DB
+     */
+    @GetMapping("/validate-csv")
+    public String validateCsvPage(Model model) {
+        model.addAttribute("models", modelService.getAllModels());
+        return "validate-csv";
+    }
+
+    /**
+     * Process CSV validation - fetches results from API Tennis without saving to DB
+     * Optimized: Makes only ONE API call per unique match (not per row)
+     */
+    @PostMapping("/validate-csv")
+    public String validateCsv(
+            @RequestParam("csvFile") MultipartFile csvFile,
+            @RequestParam(required = false) Double minOdds,
+            @RequestParam(required = false) Double maxOdds,
+            Model model
+    ) {
+        List<ValidationResult> results = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        
+        int correct = 0, incorrect = 0, skipped = 0;
+        double totalStake = 0, totalProfit = 0;
+        Map<String, CsvModelStats> modelStats = new LinkedHashMap<>();
+        
+        // Data structure to hold parsed rows
+        List<ParsedCsvRow> parsedRows = new ArrayList<>();
+        Set<String> uniqueMatchKeys = new LinkedHashSet<>();
+        
+        // ========== PASS 1: Parse all CSV rows and collect unique match keys ==========
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(csvFile.getInputStream()))) {
+            String line;
+            boolean isHeader = true;
+            int lineNum = 0;
+            
+            while ((line = reader.readLine()) != null) {
+                lineNum++;
+                if (isHeader) {
+                    isHeader = false;
+                    continue;
+                }
+                
+                try {
+                    String[] parts = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+                    if (parts.length < 13) {
+                        errors.add("Line " + lineNum + ": Invalid format (expected at least 13 columns, got " + parts.length + ")");
+                        skipped++;
+                        continue;
+                    }
+                    
+                    // CSV format from export:
+                    // 0: Match Key, 1: Match Date, 2: Tournament Key, 3: Player 1 Key, 4: Player 1 Name,
+                    // 5: Player 2 Key, 6: Player 2 Name, 7: Model ID, 8: Model Name, 9: Predicted Winner Key,
+                    // 10: Predicted Winner Name, 11: Win Probability, 12: Confidence,
+                    // 13: Player 1 Odds, 14: Player 2 Odds, 15: Predicted Winner Odds, 16: Potential Profit
+                    
+                    String matchKey = parts[0].trim().replaceAll("^\"|\"$", "");
+                    String date = parts[1].trim().replaceAll("^\"|\"$", "");
+                    String player1Key = parts[3].trim().replaceAll("^\"|\"$", "");
+                    String player1 = parts[4].trim().replaceAll("^\"|\"$", "");
+                    String player2Key = parts[5].trim().replaceAll("^\"|\"$", "");
+                    String player2 = parts[6].trim().replaceAll("^\"|\"$", "");
+                    String modelName = parts[8].trim().replaceAll("^\"|\"$", "");
+                    String predictedWinnerKey = parts[9].trim().replaceAll("^\"|\"$", "");
+                    String predictedWinner = parts[10].trim().replaceAll("^\"|\"$", "");
+                    
+                    // Parse confidence (column 12)
+                    double confidence = 0.5;
+                    String confStr = parts[12].trim().replace("%", "");
+                    if (!confStr.isEmpty()) {
+                        confidence = Double.parseDouble(confStr);
+                        if (confidence > 1.0) {
+                            confidence = confidence / 100.0;
+                        }
+                    }
+                    
+                    // Parse odds (columns 13, 14, 15)
+                    Double homeOdds = null, awayOdds = null, predictedOdds = null;
+                    if (parts.length > 13 && !parts[13].trim().isEmpty()) {
+                        homeOdds = Double.parseDouble(parts[13].trim());
+                    }
+                    if (parts.length > 14 && !parts[14].trim().isEmpty()) {
+                        awayOdds = Double.parseDouble(parts[14].trim());
+                    }
+                    if (parts.length > 15 && !parts[15].trim().isEmpty()) {
+                        predictedOdds = Double.parseDouble(parts[15].trim());
+                    }
+                    
+                    // Apply odds filter
+                    if (minOdds != null && predictedOdds != null && predictedOdds < minOdds) {
+                        continue; // Skip - below min odds
+                    }
+                    if (maxOdds != null && predictedOdds != null && predictedOdds > maxOdds) {
+                        continue; // Skip - above max odds
+                    }
+                    
+                    // Store parsed row and collect unique match key
+                    parsedRows.add(new ParsedCsvRow(lineNum, matchKey, date, player1Key, player1, 
+                            player2Key, player2, modelName, predictedWinnerKey, predictedWinner, 
+                            confidence, homeOdds, awayOdds, predictedOdds));
+                    uniqueMatchKeys.add(matchKey);
+                    
+                } catch (Exception e) {
+                    errors.add("Line " + lineNum + ": " + e.getMessage());
+                    skipped++;
+                }
+            }
+            
+        } catch (IOException e) {
+            model.addAttribute("error", "Failed to read CSV file: " + e.getMessage());
+            return "validate-csv";
+        }
+        
+        // ========== PASS 2: Fetch live results for all unique matches (ONE call per match) ==========
+        log.info("Fetching live results for {} unique matches (from {} total rows)", uniqueMatchKeys.size(), parsedRows.size());
+        Map<String, MatchResult> matchResults = new HashMap<>();
+        
+        for (String matchKey : uniqueMatchKeys) {
+            try {
+                String liveUrl = adapterApiUrl + "/api/data/fixtures/" + matchKey + "/live";
+                String response = restTemplate.getForObject(liveUrl, String.class);
+                
+                if (response != null) {
+                    JsonNode fixtureNode = objectMapper.readTree(response);
+                    String actualWinner = null;
+                    String status = "Unknown";
+                    
+                    // Extract winner
+                    JsonNode winnerNode = fixtureNode.get("event_winner");
+                    if (winnerNode != null && !winnerNode.isNull()) {
+                        String winnerValue = winnerNode.asText();
+                        if ("First Player".equals(winnerValue)) {
+                            JsonNode p1Node = fixtureNode.get("event_first_player");
+                            actualWinner = p1Node != null ? p1Node.asText() : null;
+                        } else if ("Second Player".equals(winnerValue)) {
+                            JsonNode p2Node = fixtureNode.get("event_second_player");
+                            actualWinner = p2Node != null ? p2Node.asText() : null;
+                        } else {
+                            actualWinner = winnerValue;
+                        }
+                    }
+                    
+                    // Extract status
+                    JsonNode statusNode = fixtureNode.get("event_status");
+                    if (statusNode != null && !statusNode.isNull()) {
+                        status = statusNode.asText();
+                    }
+                    
+                    matchResults.put(matchKey, new MatchResult(actualWinner, status, null));
+                }
+            } catch (Exception e) {
+                matchResults.put(matchKey, new MatchResult(null, "Error", e.getMessage()));
+            }
+        }
+        
+        log.info("Fetched results for {} matches", matchResults.size());
+        
+        // ========== PASS 3: Process all rows using cached results ==========
+        for (ParsedCsvRow row : parsedRows) {
+            MatchResult matchResult = matchResults.get(row.matchKey);
+            
+            if (matchResult == null || matchResult.error != null) {
+                errors.add("Match " + row.matchKey + ": " + (matchResult != null ? matchResult.error : "No result"));
+                skipped++;
+                continue;
+            }
+            
+            String actualWinner = matchResult.winner;
+            String status = matchResult.status;
+            
+            if (actualWinner == null || actualWinner.isBlank()) {
+                // Match not finished yet
+                results.add(new ValidationResult(
+                        row.modelName, row.matchKey, row.date, row.player1, row.player2, 
+                        row.predictedWinner, row.confidence, row.homeOdds, row.awayOdds, row.predictedOdds,
+                        null, status, null, 0.0
+                ));
+                skipped++;
+                continue;
+            }
+            
+            // Check if prediction was correct (compare by key or name)
+            boolean isCorrect = row.predictedWinnerKey.equals(actualWinner) ||
+                                row.predictedWinner.equalsIgnoreCase(actualWinner) ||
+                                (row.player1Key.equals(actualWinner) && row.player1Key.equals(row.predictedWinnerKey)) ||
+                                (row.player2Key.equals(actualWinner) && row.player2Key.equals(row.predictedWinnerKey)) ||
+                                (row.player1.equalsIgnoreCase(actualWinner) && row.player1.equalsIgnoreCase(row.predictedWinner)) ||
+                                (row.player2.equalsIgnoreCase(actualWinner) && row.player2.equalsIgnoreCase(row.predictedWinner));
+            
+            // Calculate profit
+            double profit = 0.0;
+            if (row.predictedOdds != null && row.predictedOdds > 1.0) {
+                totalStake += 1.0;
+                profit = isCorrect ? (row.predictedOdds - 1.0) : -1.0;
+                totalProfit += profit;
+            }
+            
+            // Update model stats
+            modelStats.computeIfAbsent(row.modelName, k -> new CsvModelStats(row.modelName));
+            CsvModelStats stats = modelStats.get(row.modelName);
+            stats.total++;
+            if (isCorrect) {
+                stats.correct++;
+                correct++;
+            } else {
+                stats.incorrect++;
+                incorrect++;
+            }
+            if (row.predictedOdds != null && row.predictedOdds > 1.0) {
+                stats.stake += 1.0;
+                stats.profit += profit;
+            }
+            
+            results.add(new ValidationResult(
+                    row.modelName, row.matchKey, row.date, row.player1, row.player2, 
+                    row.predictedWinner, row.confidence, row.homeOdds, row.awayOdds, row.predictedOdds,
+                    actualWinner, status, isCorrect, profit
+            ));
+        }
+        
+        // Sort model stats by profit
+        List<CsvModelStats> sortedModelStats = new ArrayList<>(modelStats.values());
+        sortedModelStats.sort((a, b) -> Double.compare(b.profit, a.profit));
+        
+        model.addAttribute("results", results);
+        model.addAttribute("modelStats", sortedModelStats);
+        model.addAttribute("correct", correct);
+        model.addAttribute("incorrect", incorrect);
+        model.addAttribute("skipped", skipped);
+        model.addAttribute("totalStake", totalStake);
+        model.addAttribute("totalProfit", totalProfit);
+        model.addAttribute("roi", totalStake > 0 ? (totalProfit / totalStake) * 100 : 0);
+        model.addAttribute("errors", errors);
+        model.addAttribute("minOdds", minOdds);
+        model.addAttribute("maxOdds", maxOdds);
+        model.addAttribute("validated", true);
+        model.addAttribute("models", modelService.getAllModels());
+        
+        return "validate-csv";
+    }
+
+    // Inner class for validation results
+    public static class ValidationResult {
+        public final String modelName;
+        public final String matchKey;
+        public final String date;
+        public final String player1;
+        public final String player2;
+        public final String predictedWinner;
+        public final double confidence;
+        public final Double homeOdds;
+        public final Double awayOdds;
+        public final Double predictedOdds;
+        public final String actualWinner;
+        public final String status;
+        public final Boolean correct;
+        public final double profit;
+
+        public ValidationResult(String modelName, String matchKey, String date, String player1, String player2,
+                               String predictedWinner, double confidence, Double homeOdds, Double awayOdds, Double predictedOdds,
+                               String actualWinner, String status, Boolean correct, double profit) {
+            this.modelName = modelName;
+            this.matchKey = matchKey;
+            this.date = date;
+            this.player1 = player1;
+            this.player2 = player2;
+            this.predictedWinner = predictedWinner;
+            this.confidence = confidence;
+            this.homeOdds = homeOdds;
+            this.awayOdds = awayOdds;
+            this.predictedOdds = predictedOdds;
+            this.actualWinner = actualWinner;
+            this.status = status;
+            this.correct = correct;
+            this.profit = profit;
+        }
+
+        public String getConfidencePercent() {
+            return String.format("%.0f%%", confidence * 100);
+        }
+
+        public String getProfitFormatted() {
+            return String.format("%+.2f", profit);
+        }
+    }
+
+    // Inner class for parsed CSV row (used in batch processing)
+    private static class ParsedCsvRow {
+        final int lineNum;
+        final String matchKey;
+        final String date;
+        final String player1Key;
+        final String player1;
+        final String player2Key;
+        final String player2;
+        final String modelName;
+        final String predictedWinnerKey;
+        final String predictedWinner;
+        final double confidence;
+        final Double homeOdds;
+        final Double awayOdds;
+        final Double predictedOdds;
+
+        ParsedCsvRow(int lineNum, String matchKey, String date, String player1Key, String player1,
+                     String player2Key, String player2, String modelName, String predictedWinnerKey,
+                     String predictedWinner, double confidence, Double homeOdds, Double awayOdds, Double predictedOdds) {
+            this.lineNum = lineNum;
+            this.matchKey = matchKey;
+            this.date = date;
+            this.player1Key = player1Key;
+            this.player1 = player1;
+            this.player2Key = player2Key;
+            this.player2 = player2;
+            this.modelName = modelName;
+            this.predictedWinnerKey = predictedWinnerKey;
+            this.predictedWinner = predictedWinner;
+            this.confidence = confidence;
+            this.homeOdds = homeOdds;
+            this.awayOdds = awayOdds;
+            this.predictedOdds = predictedOdds;
+        }
+    }
+
+    // Inner class for cached match result
+    private static class MatchResult {
+        final String winner;
+        final String status;
+        final String error;
+
+        MatchResult(String winner, String status, String error) {
+            this.winner = winner;
+            this.status = status;
+            this.error = error;
+        }
+    }
+
+    // Inner class for CSV validation model statistics
+    public static class CsvModelStats {
+        public final String modelName;
+        public int total = 0;
+        public int correct = 0;
+        public int incorrect = 0;
+        public double stake = 0;
+        public double profit = 0;
+
+        public CsvModelStats(String modelName) {
+            this.modelName = modelName;
+        }
+
+        public double getAccuracy() {
+            return total > 0 ? (double) correct / total : 0;
+        }
+
+        public String getAccuracyPercent() {
+            return String.format("%.1f%%", getAccuracy() * 100);
+        }
+
+        public double getRoi() {
+            return stake > 0 ? (profit / stake) * 100 : 0;
+        }
+
+        public String getRoiPercent() {
+            return String.format("%+.2f%%", getRoi());
+        }
+
+        public String getProfitFormatted() {
+            return String.format("%+.2f", profit);
+        }
+
+        public String getStakeFormatted() {
+            return String.format("%.0f", stake);
+        }
     }
 }
 

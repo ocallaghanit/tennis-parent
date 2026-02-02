@@ -39,8 +39,17 @@
 
         <!-- Backtest Form -->
         <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6 mb-8">
-            <h3 class="text-xl font-semibold mb-4">Run Backtest</h3>
-            <form method="post" class="grid md:grid-cols-5 gap-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold">Run Backtest</h3>
+                <div class="flex items-center gap-2 text-sm text-slate-500">
+                    <span>🎯 Single Model</span>
+                    <span class="text-slate-600">or</span>
+                    <span>📊 Compare All Models</span>
+                </div>
+            </div>
+            
+            <!-- Single Model Backtest -->
+            <form method="post" action="/ui/backtest" class="grid md:grid-cols-6 gap-4 mb-4">
                 <div>
                     <label class="block text-sm text-slate-400 mb-1">Model</label>
                     <select name="modelId" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
@@ -61,26 +70,135 @@
                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500" required>
                 </div>
                 <div>
-                    <label class="block text-sm text-slate-400 mb-1">Min Odds 
-                        <span class="text-slate-600">(optional)</span>
-                    </label>
-                    <input type="number" name="minOdds" step="0.1" min="1.0" max="10.0"
-                           th:value="${minOdds}" placeholder="e.g. 2.0"
+                    <label class="block text-sm text-slate-400 mb-1">Min Odds</label>
+                    <input type="number" name="minOdds" step="0.1" min="1.0" max="20.0"
+                           th:value="${minOdds}" placeholder="e.g. 1.5"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Max Odds</label>
+                    <input type="number" name="maxOdds" step="0.1" min="1.0" max="20.0"
+                           th:value="${maxOdds}" placeholder="e.g. 3.0"
                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
                 </div>
                 <div class="flex items-end">
                     <button type="submit" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-medium rounded-lg px-4 py-2 transition-colors">
-                        🚀 Run Backtest
+                        🚀 Run Single
                     </button>
                 </div>
             </form>
+            
+            <!-- Compare All Models -->
+            <form method="post" action="/ui/backtest-all" class="grid md:grid-cols-5 gap-4 pt-4 border-t border-slate-700">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Start Date</label>
+                    <input type="date" name="startDate" th:value="${startDate}" 
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">End Date</label>
+                    <input type="date" name="endDate" th:value="${endDate}"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Min Odds</label>
+                    <input type="number" name="minOdds" step="0.1" min="1.0" max="20.0"
+                           th:value="${minOdds}" placeholder="e.g. 1.5"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Max Odds</label>
+                    <input type="number" name="maxOdds" step="0.1" min="1.0" max="20.0"
+                           th:value="${maxOdds}" placeholder="e.g. 3.0"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-lg px-4 py-2 transition-colors">
+                        📊 Compare All Models
+                    </button>
+                </div>
+            </form>
+            
             <p class="text-xs text-slate-500 mt-3">
-                💡 <strong>Min Odds Filter:</strong> Only place bets when predicted winner's odds ≥ this value. Use 2.0+ to bet only on underdogs.
+                💡 <strong>Odds Range Filter:</strong> Only place bets when predicted winner's odds are within the range. 
+                Use 1.5-3.0 for value bets, 2.0+ for underdogs only.
             </p>
         </div>
 
-        <!-- Results -->
-        <div th:if="${result}" class="space-y-8">
+        <!-- Model Comparison Results -->
+        <div th:if="${compareMode == true and comparisonResults != null}" class="space-y-6 mb-8">
+            <div class="bg-gradient-to-r from-cyan-900/30 to-purple-900/30 border border-cyan-700/50 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold flex items-center gap-2">
+                        <span>📊</span> Model Comparison Results
+                    </h3>
+                    <div class="flex items-center gap-4 text-sm">
+                        <span class="text-slate-400">
+                            📅 <span th:text="${#temporals.format(startDate, 'MMM d')}">Jan 1</span> - 
+                            <span th:text="${#temporals.format(endDate, 'MMM d, yyyy')}">Jan 31, 2026</span>
+                        </span>
+                        <span th:if="${minOdds != null or maxOdds != null}" class="bg-amber-500/20 border border-amber-500/50 rounded-lg px-3 py-1">
+                            <span class="text-amber-400 text-sm font-medium">
+                                🎯 Odds: 
+                                <span th:text="${minOdds != null ? #numbers.formatDecimal(minOdds, 1, 1) : '1.0'}">1.5</span> - 
+                                <span th:text="${maxOdds != null ? #numbers.formatDecimal(maxOdds, 1, 1) : '∞'}">3.0</span>
+                            </span>
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-slate-700">
+                                <th class="text-left py-3 px-4 text-slate-400 font-medium">#</th>
+                                <th class="text-left py-3 px-4 text-slate-400 font-medium">Model</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Total</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Correct</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Wrong</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Accuracy</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Bets</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Stake</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Profit</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">ROI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="entry, iterStat : ${comparisonResults}" 
+                                class="border-b border-slate-800 hover:bg-slate-800/30"
+                                th:classappend="${iterStat.index == 0} ? 'bg-emerald-900/20' : ''">
+                                <td class="py-3 px-4">
+                                    <span th:if="${iterStat.index == 0}" class="text-yellow-400">🥇</span>
+                                    <span th:if="${iterStat.index == 1}" class="text-slate-400">🥈</span>
+                                    <span th:if="${iterStat.index == 2}" class="text-amber-600">🥉</span>
+                                    <span th:if="${iterStat.index > 2}" class="text-slate-500 mono" th:text="${iterStat.index + 1}">4</span>
+                                </td>
+                                <td class="py-3 px-4 font-medium" th:text="${entry.key}">Model Name</td>
+                                <td class="py-3 px-4 text-center mono text-slate-300" th:text="${entry.value.totalMatches}">0</td>
+                                <td class="py-3 px-4 text-center mono text-green-400" th:text="${entry.value.correct}">0</td>
+                                <td class="py-3 px-4 text-center mono text-red-400" th:text="${entry.value.incorrect}">0</td>
+                                <td class="py-3 px-4 text-center mono text-cyan-400" th:text="${entry.value.accuracyPercent}">0%</td>
+                                <td class="py-3 px-4 text-center mono text-slate-300" th:text="${entry.value.betsPlaced}">0</td>
+                                <td class="py-3 px-4 text-center mono text-slate-400" th:text="'$' + ${entry.value.stakeFormatted}">$0</td>
+                                <td class="py-3 px-4 text-center mono font-medium"
+                                    th:classappend="${entry.value.totalProfit >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                                    th:text="${entry.value.profitFormatted}">+0.00</td>
+                                <td class="py-3 px-4 text-center mono font-bold"
+                                    th:classappend="${entry.value.roi >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                                    th:text="${entry.value.roiPercent}">+0.00%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <p class="text-sm text-slate-500 mt-4">
+                    📈 Results sorted by profit (highest first). Betting simulation assumes 1 token stake per match.
+                </p>
+            </div>
+        </div>
+
+        <!-- Single Model Results -->
+        <div th:if="${result != null and compareMode != true}" class="space-y-8">
             <!-- Summary Stats -->
             <div class="grid md:grid-cols-5 gap-6">
                 <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6 text-center">
@@ -113,7 +231,7 @@
                     </h3>
                     <div th:if="${result.hasOddsFilter()}" class="bg-amber-500/20 border border-amber-500/50 rounded-lg px-3 py-1">
                         <span class="text-amber-400 text-sm font-medium">
-                            🎯 Min Odds: <span th:text="${result.minOddsFormatted}">2.0</span>+
+                            🎯 Odds Range: <span th:text="${result.oddsRangeFormatted}">1.5 - 3.0</span>
                         </span>
                     </div>
                 </div>
@@ -146,7 +264,7 @@
                 <p class="text-sm text-slate-500 mt-4">
                     📊 Based on bet365 odds at match time. Positive ROI means the model would have been profitable.
                     <span th:if="${result.hasOddsFilter()}" class="text-amber-400">
-                        Only betting on picks with odds ≥ <span th:text="${result.minOddsFormatted}">2.0</span>.
+                        Only betting on picks with odds in range <span th:text="${result.oddsRangeFormatted}">1.5 - 3.0</span>.
                     </span>
                 </p>
             </div>

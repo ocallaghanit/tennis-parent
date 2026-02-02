@@ -121,6 +121,39 @@ public class ModelService {
                     0.50, 0.15, 0.15, 0.05, 0.03, 0.02, 0.05, 0.05, 0.00
                 )));
         
+        // ========== CURSOR-GENERATED EXPERIMENTAL MODELS ==========
+        // Based on analysis of prediction patterns and confidence vs actual outcomes
+        
+        // Odds Respecter - Trust the market more, don't fight the odds
+        models.put("odds-respecter", createBuiltInModel("odds-respecter", "🤖 Odds Respecter", 
+                "CURSOR: Trusts market odds (40% OAPS), conservative picks aligned with favorites", createWeights(
+                    0.30, 0.10, 0.12, 0.03, 0.02, 0.03, 0.40, 0.00, 0.00
+                )));
+        
+        // Moderate Confidence Value - Avoids over-confident traps (55-70% conf sweet spot)
+        models.put("moderate-confidence", createBuiltInModel("moderate-confidence", "🤖 Moderate Confidence", 
+                "CURSOR: Targets moderate confidence picks, balanced OWL + momentum", createWeights(
+                    0.10, 0.15, 0.18, 0.05, 0.02, 0.15, 0.10, 0.15, 0.10
+                )));
+        
+        // Contrarian Underdog - Finds value in underdogs with momentum
+        models.put("contrarian-underdog", createBuiltInModel("contrarian-underdog", "🤖 Contrarian Underdog", 
+                "CURSOR: High OAPS + momentum for underdog value hunting", createWeights(
+                    0.10, 0.05, 0.18, 0.05, 0.02, 0.25, 0.35, 0.00, 0.00
+                )));
+        
+        // Market Hybrid - Balance model signals with market wisdom
+        models.put("market-hybrid", createBuiltInModel("market-hybrid", "🤖 Market Hybrid", 
+                "CURSOR: Equal balance of ranking, OWL, and OAPS (25% each)", createWeights(
+                    0.25, 0.10, 0.10, 0.05, 0.00, 0.00, 0.25, 0.25, 0.00
+                )));
+        
+        // Fatigue & Form - Physical/recent factors over historical rankings
+        models.put("fatigue-form", createBuiltInModel("fatigue-form", "🤖 Fatigue & Form", 
+                "CURSOR: Prioritizes fatigue (25%), form (25%), momentum (25%)", createWeights(
+                    0.05, 0.05, 0.25, 0.10, 0.25, 0.25, 0.05, 0.00, 0.00
+                )));
+        
         BUILT_IN_MODELS = Collections.unmodifiableMap(models);
     }
     

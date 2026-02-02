@@ -80,6 +80,13 @@ public class ApiTennisClient {
     }
 
     /**
+     * Get a single fixture by event key (for read-only lookups)
+     */
+    public JsonNode getFixtureByKey(String eventKey) {
+        return callApi("get_fixtures", Map.of("match_key", eventKey));
+    }
+
+    /**
      * Get player info
      */
     public JsonNode getPlayer(String playerId) {

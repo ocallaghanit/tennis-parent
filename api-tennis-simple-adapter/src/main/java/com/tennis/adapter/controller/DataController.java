@@ -1,5 +1,7 @@
 package com.tennis.adapter.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.tennis.adapter.client.ApiTennisClient;
 import com.tennis.adapter.dto.*;
 import com.tennis.adapter.exception.ResourceNotFoundException;
 import com.tennis.adapter.model.*;
@@ -36,19 +38,22 @@ public class DataController {
     private final FixtureRepository fixtureRepository;
     private final PlayerRepository playerRepository;
     private final OddsRepository oddsRepository;
+    private final ApiTennisClient apiTennisClient;
 
     public DataController(
             EventRepository eventRepository,
             TournamentRepository tournamentRepository,
             FixtureRepository fixtureRepository,
             PlayerRepository playerRepository,
-            OddsRepository oddsRepository
+            OddsRepository oddsRepository,
+            ApiTennisClient apiTennisClient
     ) {
         this.eventRepository = eventRepository;
         this.tournamentRepository = tournamentRepository;
         this.fixtureRepository = fixtureRepository;
         this.playerRepository = playerRepository;
         this.oddsRepository = oddsRepository;
+        this.apiTennisClient = apiTennisClient;
     }
 
     // =============== EVENTS ===============
@@ -185,6 +190,86 @@ public class DataController {
             return ResponseEntity.ok(fixture);
         }
         return ResponseEntity.ok(FixtureResponse.from(fixture));
+    }
+
+    @GetMapping("/fixtures/{eventKey}/live")
+    @Operation(summary = "Get fixture LIVE from API (read-only)", 
+               description = "Fetches a fixture directly from API Tennis without saving to database. Use for validation purposes.")
+    public ResponseEntity<?> getFixtureLive(
+            @Parameter(description = "Event/match key")
+            @PathVariable String eventKey
+    ) {
+        try {
+            JsonNode response = apiTennisClient.getFixtureByKey(eventKey);
+            
+            if (response == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Check success field
+            JsonNode successNode = response.get("success");
+            if (successNode == null || successNode.asInt() != 1) {
+                return ResponseEntity.status(502).body(Map.of(
+                        "error", "API Tennis returned unsuccessful response",
+                        "response", response.toString()
+                ));
+            }
+            
+            // Extract the fixture from result array
+            JsonNode resultNode = response.get("result");
+            if (resultNode == null || !resultNode.isArray() || resultNode.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Return the first (and typically only) fixture
+            return ResponseEntity.ok(resultNode.get(0));
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "Failed to fetch from API Tennis",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/fixtures/live/bulk")
+    @Operation(summary = "Bulk fixture lookup LIVE from API (read-only)",
+               description = "Fetch multiple fixtures directly from API Tennis without saving. Returns map of eventKey -> fixture data.")
+    public ResponseEntity<?> getFixturesLiveBulk(
+            @Parameter(description = "List of event keys")
+            @RequestBody List<String> eventKeys
+    ) {
+        if (eventKeys == null || eventKeys.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Event keys list cannot be empty"));
+        }
+        if (eventKeys.size() > 50) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Maximum 50 event keys per request"));
+        }
+        
+        java.util.Map<String, Object> results = new java.util.LinkedHashMap<>();
+        
+        for (String eventKey : eventKeys) {
+            try {
+                JsonNode response = apiTennisClient.getFixtureByKey(eventKey);
+                
+                if (response != null) {
+                    JsonNode successNode = response.get("success");
+                    if (successNode != null && successNode.asInt() == 1) {
+                        JsonNode resultNode = response.get("result");
+                        if (resultNode != null && resultNode.isArray() && !resultNode.isEmpty()) {
+                            results.put(eventKey, resultNode.get(0));
+                            continue;
+                        }
+                    }
+                }
+                results.put(eventKey, null);
+                
+            } catch (Exception e) {
+                results.put(eventKey, Map.of("error", e.getMessage()));
+            }
+        }
+        
+        return ResponseEntity.ok(results);
     }
 
     @GetMapping("/fixtures/player/{playerKey}")

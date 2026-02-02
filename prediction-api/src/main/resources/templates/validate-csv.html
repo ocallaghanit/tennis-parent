@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validate CSV - Tennis Prediction API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-slate-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-slate-900/80 border-b border-purple-800/50 sticky top-0 z-50 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🔮</span>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    Tennis Prediction API
+                </h1>
+            </div>
+            <nav class="flex items-center gap-6">
+                <a href="/ui/dashboard" class="text-slate-400 hover:text-slate-200 transition-colors">Dashboard</a>
+                <a href="/ui/predict" class="text-slate-400 hover:text-slate-200 transition-colors">Predict</a>
+                <a href="/ui/predictions" class="text-slate-400 hover:text-slate-200 transition-colors">Predictions</a>
+                <a href="/ui/backtest" class="text-slate-400 hover:text-slate-200 transition-colors">Backtest</a>
+                <a href="/ui/validate-csv" class="text-cyan-400 font-medium">Validate CSV</a>
+                <a href="/ui/models" class="text-slate-400 hover:text-slate-200 transition-colors">Models</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold mb-2">📋 Validate CSV (Read-Only)</h2>
+            <p class="text-slate-500">Upload your prediction CSV and validate against live API Tennis results — <span class="text-amber-400 font-medium">no database changes</span></p>
+        </div>
+
+        <!-- Info Banner -->
+        <div class="bg-amber-900/30 border border-amber-700/50 rounded-xl p-4 mb-8">
+            <div class="flex items-start gap-3">
+                <span class="text-2xl">⚠️</span>
+                <div>
+                    <h3 class="font-semibold text-amber-400">Read-Only Validation</h3>
+                    <p class="text-sm text-slate-400 mt-1">
+                        This feature fetches match results directly from API Tennis and compares them to your predictions. 
+                        <strong class="text-amber-300">No data is saved to your database</strong> — purely for validation purposes.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Form -->
+        <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6 mb-8">
+            <h3 class="text-xl font-semibold mb-4">Upload Prediction CSV</h3>
+            <form method="post" enctype="multipart/form-data" class="space-y-4">
+                <div class="grid md:grid-cols-4 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm text-slate-400 mb-1">CSV File</label>
+                        <input type="file" name="csvFile" accept=".csv" required
+                               class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Min Odds</label>
+                        <input type="number" name="minOdds" step="0.1" min="1.0" max="20.0"
+                               th:value="${minOdds}" placeholder="e.g. 1.5"
+                               class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Max Odds</label>
+                        <input type="number" name="maxOdds" step="0.1" min="1.0" max="20.0"
+                               th:value="${maxOdds}" placeholder="e.g. 3.0"
+                               class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button type="submit" class="bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-lg px-6 py-2 transition-colors">
+                        ✅ Validate Predictions
+                    </button>
+                    <span class="text-sm text-slate-500">
+                        Uses CSV exported from "Predict All Models" page
+                    </span>
+                </div>
+            </form>
+        </div>
+
+        <!-- Error Messages -->
+        <div th:if="${error}" class="bg-red-900/30 border border-red-700/50 rounded-xl p-4 mb-8">
+            <p class="text-red-400" th:text="${error}">Error message</p>
+        </div>
+
+        <div th:if="${errors != null and !errors.isEmpty()}" class="bg-amber-900/30 border border-amber-700/50 rounded-xl p-4 mb-8">
+            <h4 class="font-semibold text-amber-400 mb-2">⚠️ Processing Warnings</h4>
+            <ul class="text-sm text-slate-400 space-y-1 max-h-32 overflow-y-auto">
+                <li th:each="err : ${errors}" th:text="${err}">Error line</li>
+            </ul>
+        </div>
+
+        <!-- Results -->
+        <div th:if="${validated == true}" class="space-y-8">
+            
+            <!-- Summary Stats -->
+            <div class="grid md:grid-cols-6 gap-4">
+                <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-purple-400 mono" th:text="${correct + incorrect + skipped}">0</div>
+                    <div class="text-slate-400 text-sm mt-1">Total Lines</div>
+                </div>
+                <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-green-400 mono" th:text="${correct}">0</div>
+                    <div class="text-slate-400 text-sm mt-1">Correct</div>
+                </div>
+                <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-red-400 mono" th:text="${incorrect}">0</div>
+                    <div class="text-slate-400 text-sm mt-1">Incorrect</div>
+                </div>
+                <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-slate-500 mono" th:text="${skipped}">0</div>
+                    <div class="text-slate-400 text-sm mt-1">Skipped</div>
+                </div>
+                <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold mono"
+                         th:classappend="${totalProfit >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                         th:text="${#numbers.formatDecimal(totalProfit, 1, 2)}">0.00</div>
+                    <div class="text-slate-400 text-sm mt-1">Total Profit</div>
+                </div>
+                <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold mono"
+                         th:classappend="${roi >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                         th:text="${#numbers.formatDecimal(roi, 1, 2) + '%'}">0%</div>
+                    <div class="text-slate-400 text-sm mt-1">ROI</div>
+                </div>
+            </div>
+
+            <!-- Model Comparison -->
+            <div th:if="${modelStats != null and !modelStats.isEmpty()}" 
+                 class="bg-gradient-to-r from-cyan-900/30 to-purple-900/30 border border-cyan-700/50 rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <span>📊</span> Model Performance (Sorted by Profit)
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-slate-700">
+                                <th class="text-left py-3 px-4 text-slate-400 font-medium">#</th>
+                                <th class="text-left py-3 px-4 text-slate-400 font-medium">Model</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Total</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Correct</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Wrong</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Accuracy</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Stake</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">Profit</th>
+                                <th class="text-center py-3 px-4 text-slate-400 font-medium">ROI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="stat, iterStat : ${modelStats}" 
+                                class="border-b border-slate-800 hover:bg-slate-800/30"
+                                th:classappend="${iterStat.index == 0} ? 'bg-emerald-900/20' : ''">
+                                <td class="py-3 px-4">
+                                    <span th:if="${iterStat.index == 0}" class="text-yellow-400">🥇</span>
+                                    <span th:if="${iterStat.index == 1}" class="text-slate-400">🥈</span>
+                                    <span th:if="${iterStat.index == 2}" class="text-amber-600">🥉</span>
+                                    <span th:if="${iterStat.index > 2}" class="text-slate-500 mono" th:text="${iterStat.index + 1}">4</span>
+                                </td>
+                                <td class="py-3 px-4 font-medium" th:text="${stat.modelName}">Model</td>
+                                <td class="py-3 px-4 text-center mono text-slate-300" th:text="${stat.total}">0</td>
+                                <td class="py-3 px-4 text-center mono text-green-400" th:text="${stat.correct}">0</td>
+                                <td class="py-3 px-4 text-center mono text-red-400" th:text="${stat.incorrect}">0</td>
+                                <td class="py-3 px-4 text-center mono text-cyan-400" th:text="${stat.accuracyPercent}">0%</td>
+                                <td class="py-3 px-4 text-center mono text-slate-400" th:text="'$' + ${stat.stakeFormatted}">$0</td>
+                                <td class="py-3 px-4 text-center mono font-medium"
+                                    th:classappend="${stat.profit >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                                    th:text="${stat.profitFormatted}">+0.00</td>
+                                <td class="py-3 px-4 text-center mono font-bold"
+                                    th:classappend="${stat.roi >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                                    th:text="${stat.roiPercent}">+0.00%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Individual Results -->
+            <div class="bg-slate-900/50 border border-purple-800/30 rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-4">📝 Individual Predictions (showing first 200)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="text-left text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="pb-2 pr-4">Model</th>
+                                <th class="pb-2 pr-4">Match</th>
+                                <th class="pb-2 pr-4">Date</th>
+                                <th class="pb-2 pr-4">Predicted</th>
+                                <th class="pb-2 pr-4">Actual</th>
+                                <th class="pb-2 pr-4 text-center">Odds</th>
+                                <th class="pb-2 pr-4 text-center">Conf</th>
+                                <th class="pb-2 text-center">Result</th>
+                                <th class="pb-2 text-right">Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/50">
+                            <tr th:each="result, stat : ${results}" th:if="${stat.index < 200}" 
+                                class="hover:bg-slate-800/30"
+                                th:classappend="${result.correct == true} ? 'bg-emerald-950/20' : (${result.correct == false} ? 'bg-red-950/20' : 'bg-slate-800/10')">
+                                <td class="py-2 pr-4 text-xs text-slate-400" th:text="${result.modelName}">Model</td>
+                                <td class="py-2 pr-4">
+                                    <span th:text="${result.player1}">Player 1</span>
+                                    <span class="text-slate-600 mx-1">vs</span>
+                                    <span th:text="${result.player2}">Player 2</span>
+                                </td>
+                                <td class="py-2 pr-4 text-xs mono text-slate-400" th:text="${result.date}">2026-01-27</td>
+                                <td class="py-2 pr-4">
+                                    <span class="font-medium" 
+                                          th:classappend="${result.correct == true} ? 'text-emerald-400' : 'text-slate-300'"
+                                          th:text="${result.predictedWinner}">Predicted</span>
+                                    <span th:if="${result.predictedOdds != null}" class="text-xs text-amber-400 ml-1 mono">
+                                        @<span th:text="${#numbers.formatDecimal(result.predictedOdds, 1, 2)}">1.50</span>
+                                    </span>
+                                </td>
+                                <td class="py-2 pr-4">
+                                    <span th:if="${result.actualWinner != null}" class="text-slate-300" th:text="${result.actualWinner}">Actual</span>
+                                    <span th:if="${result.actualWinner == null}" class="text-slate-500 italic" th:text="${result.status}">Not Finished</span>
+                                </td>
+                                <td class="py-2 pr-4 text-center">
+                                    <span th:if="${result.homeOdds != null}" class="text-xs mono text-slate-500">
+                                        <span th:text="${#numbers.formatDecimal(result.homeOdds, 1, 2)}">1.50</span>
+                                        <span class="mx-1">/</span>
+                                        <span th:text="${#numbers.formatDecimal(result.awayOdds, 1, 2)}">2.50</span>
+                                    </span>
+                                    <span th:if="${result.homeOdds == null}" class="text-slate-600">-</span>
+                                </td>
+                                <td class="py-2 pr-4 text-center">
+                                    <span class="mono" th:text="${result.confidencePercent}">50%</span>
+                                </td>
+                                <td class="py-2 text-center">
+                                    <span th:if="${result.correct == true}" class="text-emerald-400 text-lg">✓</span>
+                                    <span th:if="${result.correct == false}" class="text-red-400 text-lg">✗</span>
+                                    <span th:if="${result.correct == null}" class="text-slate-500">⏳</span>
+                                </td>
+                                <td class="py-2 text-right">
+                                    <span th:if="${result.correct != null and result.predictedOdds != null}" 
+                                          class="mono font-semibold"
+                                          th:classappend="${result.profit >= 0} ? 'text-emerald-400' : 'text-red-400'"
+                                          th:text="${result.profitFormatted}">+0.00</span>
+                                    <span th:if="${result.correct == null}" class="text-slate-600">-</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center">
+                    <span class="text-sm text-slate-500">
+                        🔒 <strong class="text-amber-400">Read-Only Mode</strong> — No data was saved to your database
+                    </span>
+                    <span class="text-sm text-slate-400">
+                        Showing <span class="text-slate-200" th:text="${results.size() > 200 ? 200 : results.size()}">0</span>
+                        of <span class="text-slate-200" th:text="${results.size()}">0</span> predictions
+                    </span>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+

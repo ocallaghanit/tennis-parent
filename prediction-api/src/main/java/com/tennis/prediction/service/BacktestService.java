@@ -42,18 +42,26 @@ public class BacktestService {
     }
 
     /**
-     * Run a backtest for a model on historical data with default minOdds (no filter).
+     * Run a backtest for a model on historical data with default odds filter (no filter).
      */
     public BacktestResult runBacktest(String modelId, LocalDate startDate, LocalDate endDate) {
-        return runBacktest(modelId, startDate, endDate, null);
+        return runBacktest(modelId, startDate, endDate, null, null);
     }
 
     /**
-     * Run a backtest for a model on historical data with optional minimum odds filter.
-     * @param minOdds If provided, only place bets when predicted winner's odds >= minOdds
+     * Run a backtest for a model on historical data with optional minimum odds filter only.
      */
     public BacktestResult runBacktest(String modelId, LocalDate startDate, LocalDate endDate, Double minOdds) {
-        log.info("Running backtest for model {} from {} to {} (minOdds={})", modelId, startDate, endDate, minOdds);
+        return runBacktest(modelId, startDate, endDate, minOdds, null);
+    }
+
+    /**
+     * Run a backtest for a model on historical data with optional odds range filter.
+     * @param minOdds If provided, only place bets when predicted winner's odds >= minOdds
+     * @param maxOdds If provided, only place bets when predicted winner's odds <= maxOdds
+     */
+    public BacktestResult runBacktest(String modelId, LocalDate startDate, LocalDate endDate, Double minOdds, Double maxOdds) {
+        log.info("Running backtest for model {} from {} to {} (minOdds={}, maxOdds={})", modelId, startDate, endDate, minOdds, maxOdds);
 
         // Get finished matches in date range
         List<FixtureDocument> finishedMatches = fixtureRepository.findFinishedByDateRange(startDate, endDate);
@@ -145,9 +153,12 @@ public class BacktestService {
                     
                     matchesWithOdds++;
                     
-                    // Apply minimum odds filter
-                    if (minOdds != null && predictedOdds < minOdds) {
-                        // Odds below threshold - don't place bet
+                    // Apply odds range filter
+                    boolean meetsMinOdds = (minOdds == null || predictedOdds >= minOdds);
+                    boolean meetsMaxOdds = (maxOdds == null || predictedOdds <= maxOdds);
+                    
+                    if (!meetsMinOdds || !meetsMaxOdds) {
+                        // Odds outside filter range - don't place bet
                         result.setBetPlaced(false);
                         skippedDueToOddsFilter++;
                     } else {
@@ -204,6 +215,7 @@ public class BacktestService {
                 betsPlaced,
                 skippedDueToOddsFilter,
                 minOdds,
+                maxOdds,
                 totalStake,
                 totalProfit,
                 roi,
@@ -229,13 +241,28 @@ public class BacktestService {
      * Compare multiple models on the same date range.
      */
     public Map<String, BacktestResult> compareModels(List<String> modelIds, LocalDate startDate, LocalDate endDate) {
+        return compareModels(modelIds, startDate, endDate, null, null);
+    }
+
+    /**
+     * Compare multiple models on the same date range with odds filter.
+     */
+    public Map<String, BacktestResult> compareModels(List<String> modelIds, LocalDate startDate, LocalDate endDate, Double minOdds, Double maxOdds) {
         Map<String, BacktestResult> results = new LinkedHashMap<>();
         
         for (String modelId : modelIds) {
-            results.put(modelId, runBacktest(modelId, startDate, endDate));
+            results.put(modelId, runBacktest(modelId, startDate, endDate, minOdds, maxOdds));
         }
         
-        return results;
+        // Sort by profit descending (best models first)
+        return results.entrySet().stream()
+                .sorted((a, b) -> Double.compare(b.getValue().totalProfit(), a.getValue().totalProfit()))
+                .collect(java.util.stream.Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                ));
     }
 
     /**
@@ -312,6 +339,7 @@ public class BacktestService {
             int betsPlaced,
             int skippedDueToOddsFilter,
             Double minOddsFilter,  // The minimum odds filter applied (null if no filter)
+            Double maxOddsFilter,  // The maximum odds filter applied (null if no filter)
             double totalStake,
             double totalProfit,
             double roi,  // Return on Investment %
@@ -337,8 +365,19 @@ public class BacktestService {
             return minOddsFilter != null ? String.format("%.2f", minOddsFilter) : "None";
         }
         
+        public String getMaxOddsFormatted() {
+            return maxOddsFilter != null ? String.format("%.2f", maxOddsFilter) : "None";
+        }
+        
+        public String getOddsRangeFormatted() {
+            if (minOddsFilter == null && maxOddsFilter == null) return "None";
+            String min = minOddsFilter != null ? String.format("%.1f", minOddsFilter) : "1.0";
+            String max = maxOddsFilter != null ? String.format("%.1f", maxOddsFilter) : "∞";
+            return min + " - " + max;
+        }
+        
         public boolean hasOddsFilter() {
-            return minOddsFilter != null && minOddsFilter > 1.0;
+            return (minOddsFilter != null && minOddsFilter > 1.0) || (maxOddsFilter != null);
         }
     }
 
