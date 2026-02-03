@@ -588,6 +588,103 @@ public class UiController {
     }
 
     /**
+     * Tournaments list page - shows all tournaments with filtering
+     */
+    @GetMapping("/tournaments")
+    public String tournaments(
+            @RequestParam(required = false) String surface,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String eventType,
+            Model model) {
+        
+        // Get all tournaments
+        List<TournamentDocument> allTournaments = tournamentRepository.findAll();
+        
+        // Apply filters
+        List<TournamentDocument> filtered = allTournaments.stream()
+                .filter(t -> {
+                    // Surface filter
+                    if (surface != null && !surface.isBlank()) {
+                        if (t.getSurface() == null || !t.getSurface().equalsIgnoreCase(surface)) {
+                            return false;
+                        }
+                    }
+                    // Event type filter (ATP vs Challenger)
+                    if (eventType != null && !eventType.isBlank()) {
+                        if (t.getEventTypeKey() == null || !t.getEventTypeKey().equals(eventType)) {
+                            return false;
+                        }
+                    }
+                    // Search filter
+                    if (search != null && !search.isBlank()) {
+                        String searchLower = search.toLowerCase();
+                        boolean nameMatch = t.getTournamentName() != null && 
+                                           t.getTournamentName().toLowerCase().contains(searchLower);
+                        boolean countryMatch = t.getCountry() != null && 
+                                              t.getCountry().toLowerCase().contains(searchLower);
+                        boolean keyMatch = t.getTournamentKey() != null && 
+                                          t.getTournamentKey().contains(searchLower);
+                        return nameMatch || countryMatch || keyMatch;
+                    }
+                    return true;
+                })
+                .sorted((a, b) -> {
+                    // Sort by name
+                    String nameA = a.getTournamentName() != null ? a.getTournamentName() : "";
+                    String nameB = b.getTournamentName() != null ? b.getTournamentName() : "";
+                    return nameA.compareToIgnoreCase(nameB);
+                })
+                .collect(Collectors.toList());
+        
+        // Get fixture counts per tournament for displaying stats
+        Map<String, Long> fixtureCountByTournament = fixtureRepository.findAll().stream()
+                .filter(f -> f.getTournamentKey() != null)
+                .collect(Collectors.groupingBy(FixtureDocument::getTournamentKey, Collectors.counting()));
+        
+        // Enrich tournaments with additional data
+        List<Map<String, Object>> enrichedTournaments = new ArrayList<>();
+        for (TournamentDocument t : filtered) {
+            Map<String, Object> enriched = new HashMap<>();
+            enriched.put("tournament", t);
+            enriched.put("fixtureCount", fixtureCountByTournament.getOrDefault(t.getTournamentKey(), 0L));
+            
+            // Look up country if not set
+            String country = t.getCountry();
+            if (country == null || country.isBlank()) {
+                country = lookupTournamentCountry(t.getTournamentName());
+            }
+            enriched.put("country", country);
+            
+            enrichedTournaments.add(enriched);
+        }
+        
+        model.addAttribute("tournaments", enrichedTournaments);
+        model.addAttribute("totalCount", allTournaments.size());
+        model.addAttribute("filteredCount", filtered.size());
+        
+        // Get unique surfaces for filter dropdown
+        Set<String> surfaces = allTournaments.stream()
+                .map(TournamentDocument::getSurface)
+                .filter(s -> s != null && !s.isBlank())
+                .collect(Collectors.toCollection(TreeSet::new));
+        model.addAttribute("surfaces", surfaces);
+        
+        // Get unique event types for filter dropdown
+        Set<String> eventTypes = allTournaments.stream()
+                .map(TournamentDocument::getEventTypeKey)
+                .filter(e -> e != null && !e.isBlank())
+                .collect(Collectors.toCollection(TreeSet::new));
+        model.addAttribute("eventTypes", eventTypes);
+        
+        // Current filter values
+        model.addAttribute("currentSurface", surface);
+        model.addAttribute("currentSearch", search);
+        model.addAttribute("currentEventType", eventType);
+        
+        return "tournaments";
+    }
+
+    /**
      * Tournament details page
      */
     @GetMapping("/tournament/{tournamentKey}")

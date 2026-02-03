@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournaments - Tennis Data Adapter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+        .mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <!-- Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🎾</span>
+                <h1 class="text-xl font-bold text-emerald-400">Tennis Data Adapter</h1>
+            </div>
+            <nav class="flex gap-6 text-sm">
+                <a href="/ui/dashboard" class="text-slate-400 hover:text-emerald-400 transition-colors">Dashboard</a>
+                <a href="/ui/fixtures" class="text-slate-400 hover:text-emerald-400 transition-colors">Fixtures</a>
+                <a href="/ui/tournaments" class="text-emerald-400 font-medium">Tournaments</a>
+                <a href="/ui/players" class="text-slate-400 hover:text-emerald-400 transition-colors">Players</a>
+                <a href="/ui/compare" class="text-slate-400 hover:text-emerald-400 transition-colors">Compare</a>
+                <a href="/ui/sync" class="text-slate-400 hover:text-emerald-400 transition-colors">Sync</a>
+                <a href="/swagger-ui.html" class="text-slate-500 hover:text-slate-300 transition-colors">API Docs →</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold mb-2">🏆 Tournaments</h2>
+            <p class="text-slate-400">Browse all tennis tournaments in the database</p>
+        </div>
+
+        <!-- Filters -->
+        <form method="get" action="/ui/tournaments" class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8">
+            <div class="flex flex-wrap gap-4 items-end">
+                <!-- Search -->
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm text-slate-400 mb-2">Search</label>
+                    <input type="text" name="search" th:value="${currentSearch}" 
+                           placeholder="Tournament name, country, or key..."
+                           class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                </div>
+                
+                <!-- Surface -->
+                <div class="min-w-[150px]">
+                    <label class="block text-sm text-slate-400 mb-2">Surface</label>
+                    <select name="surface" 
+                            class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500">
+                        <option value="">All Surfaces</option>
+                        <option th:each="s : ${surfaces}" th:value="${s}" th:text="${s}" 
+                                th:selected="${s == currentSurface}">Surface</option>
+                    </select>
+                </div>
+                
+                <!-- Event Type -->
+                <div class="min-w-[150px]">
+                    <label class="block text-sm text-slate-400 mb-2">Event Type</label>
+                    <select name="eventType" 
+                            class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500">
+                        <option value="">All Types</option>
+                        <option th:each="e : ${eventTypes}" th:value="${e}" th:text="${e}" 
+                                th:selected="${e == currentEventType}">Type</option>
+                    </select>
+                </div>
+                
+                <!-- Buttons -->
+                <div class="flex gap-2">
+                    <button type="submit" 
+                            class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors">
+                        🔍 Search
+                    </button>
+                    <a href="/ui/tournaments" 
+                       class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">
+                        Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+
+        <!-- Results Summary -->
+        <div class="flex items-center justify-between mb-4">
+            <p class="text-slate-400">
+                Showing <span class="text-white font-medium" th:text="${filteredCount}">0</span>
+                <span th:if="${filteredCount != totalCount}">
+                    of <span class="text-slate-500" th:text="${totalCount}">0</span>
+                </span>
+                tournaments
+            </p>
+        </div>
+
+        <!-- Tournament Grid -->
+        <div th:if="${tournaments.isEmpty()}" class="bg-slate-900/50 border border-slate-800 rounded-xl p-12 text-center">
+            <p class="text-4xl mb-4">🏜️</p>
+            <p class="text-slate-400">No tournaments found matching your filters</p>
+        </div>
+
+        <div th:unless="${tournaments.isEmpty()}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <a th:each="item : ${tournaments}" 
+               th:href="@{/ui/tournament/{key}(key=${item.tournament.tournamentKey})}"
+               class="bg-slate-900/50 border border-slate-800 rounded-xl p-5 hover:border-emerald-600/50 hover:bg-slate-800/50 transition-all group">
+                
+                <!-- Tournament Header -->
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold text-white truncate group-hover:text-emerald-400 transition-colors"
+                            th:text="${item.tournament.tournamentName ?: 'Unknown Tournament'}">Tournament Name</h3>
+                        <p class="text-sm text-slate-500 truncate" th:if="${item.country}" th:text="${'🌍 ' + item.country}">Country</p>
+                    </div>
+                    <span class="text-slate-600 group-hover:text-emerald-400 transition-colors ml-2">→</span>
+                </div>
+                
+                <!-- Tournament Details -->
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <!-- Surface Badge -->
+                    <span th:if="${item.tournament.surface}" 
+                          class="px-2 py-1 rounded text-xs"
+                          th:classappend="${item.tournament.surface == 'Hard'} ? 'bg-blue-900/50 text-blue-400' : 
+                                         (${item.tournament.surface == 'Clay'} ? 'bg-orange-900/50 text-orange-400' : 
+                                         (${item.tournament.surface == 'Grass'} ? 'bg-green-900/50 text-green-400' : 
+                                         (${item.tournament.surface == 'Carpet'} ? 'bg-purple-900/50 text-purple-400' : 'bg-slate-700 text-slate-400')))"
+                          th:text="${item.tournament.surface}">Surface</span>
+                    
+                    <!-- Event Type Badge -->
+                    <span th:if="${item.tournament.eventTypeKey}" 
+                          class="px-2 py-1 bg-slate-700 text-slate-400 rounded text-xs"
+                          th:text="${item.tournament.eventTypeKey == '265'} ? 'ATP' : (${item.tournament.eventTypeKey == '281'} ? 'Challenger' : ${item.tournament.eventTypeKey})">Type</span>
+                </div>
+                
+                <!-- Stats -->
+                <div class="flex items-center justify-between text-sm border-t border-slate-800 pt-3 mt-auto">
+                    <div class="text-slate-400">
+                        <span class="text-white font-medium" th:text="${item.fixtureCount}">0</span> matches
+                    </div>
+                    <div class="text-slate-500 mono text-xs" th:text="${item.tournament.tournamentKey}">Key</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Pagination Info -->
+        <div th:if="${tournaments.size() > 50}" class="mt-8 text-center text-slate-500 text-sm">
+            <p>Showing first 100 results. Use filters to narrow down.</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 mt-12 py-6 text-center text-slate-600 text-sm">
+        Tennis Data Adapter • Powered by API Tennis
+    </footer>
+</body>
+</html>
+
